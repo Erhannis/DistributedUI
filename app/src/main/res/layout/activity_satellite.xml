@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.erhannis.android.distributeduitest.HubActivity"
+    tools:context="com.erhannis.android.distributeduitest.SatelliteActivity"
     android:orientation="vertical">
 
     <LinearLayout
@@ -14,10 +14,10 @@
         android:orientation="vertical"
         android:layout_weight="1">
         <Button
-            android:id="@+id/btnMoveFragment"
+            android:id="@+id/btnListenForConnection"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Move fragment"/>
+            android:text="Listen for connection"/>
     </LinearLayout>
 
     <LinearLayout
@@ -26,7 +26,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:layout_weight="1">
-        <include layout="@layout/content_buttons"/>
+        <include layout="@layout/content_satellite"/>
     </LinearLayout>
 
 </LinearLayout>
