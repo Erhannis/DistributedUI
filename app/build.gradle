@@ -5,7 +5,7 @@ android {
     buildToolsVersion "25.0.2"
     defaultConfig {
         applicationId "com.erhannis.android.distributeduitest"
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 25
         versionCode 1
         versionName "1.0"
@@ -16,6 +16,11 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    packagingOptions {
+        pickFirst 'META-INF/LICENSE.txt'
+        pickFirst 'META-INF/NOTICE.txt'
+        pickFirst 'META-INF/INDEX.LIST'
     }
 }
 
@@ -28,4 +33,5 @@ dependencies {
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.android.support:design:25.3.1'
     testCompile 'junit:junit:4.12'
+    compile 'eu.hgross:blaubot-android:2+'
 }

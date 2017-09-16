@@ -20,96 +20,96 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.util.UUID;
 
+import eu.hgross.blaubot.android.BlaubotAndroid;
+import eu.hgross.blaubot.android.BlaubotAndroidFactory;
+import eu.hgross.blaubot.core.Blaubot;
+import eu.hgross.blaubot.core.IBlaubotDevice;
+import eu.hgross.blaubot.core.ILifecycleListener;
+import eu.hgross.blaubot.messaging.BlaubotMessage;
+import eu.hgross.blaubot.messaging.IBlaubotChannel;
+import eu.hgross.blaubot.messaging.IBlaubotMessageListener;
+
 public class SatelliteActivity extends AppCompatActivity {
   private static final String TAG = "SatelliteActivity";
   public static final String NAME = "DistUIName";
   public static final UUID MY_UUID = UUID.fromString("e72cd6c5-2c05-42ca-8f77-91d90649c970");
+
+  protected static Blaubot mBlaubot;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_satellite);
 
+    mBlaubot = BlaubotAndroidFactory.createEthernetBlaubot(MY_UUID);
+    mBlaubot.startBlaubot();
+
+    final IBlaubotChannel channel = mBlaubot.createChannel((short)1);
+
+    // attach life cycle listener
+    mBlaubot.addLifecycleListener(new ILifecycleListener() {
+      @Override
+      public void onDisconnected() {
+        System.out.println("bb onDisconnected");
+      }
+
+      @Override
+      public void onDeviceLeft(IBlaubotDevice blaubotDevice) {
+        System.out.println("bb onDeviceLeft: " + blaubotDevice);
+      }
+
+      @Override
+      public void onDeviceJoined(IBlaubotDevice blaubotDevice) {
+        System.out.println("bb onDeviceJoined: " + blaubotDevice);
+      }
+
+      @Override
+      public void onConnected() {
+        System.out.println("bb onConnected");
+        // THIS device connected to a network
+        // you can now subscribe to channels and use them:
+        channel.subscribe(new IBlaubotMessageListener() {
+          @Override
+          public void onMessage(BlaubotMessage blaubotMessage) {
+            System.out.println("Got message: " + new String(blaubotMessage.getPayload()) + " : " + blaubotMessage);
+          }
+        });
+        channel.publish("Init: Hello world, from satellite!".getBytes());
+        // onDeviceJoined(...) calls will follow for each OTHER device that was already connected
+      }
+
+      @Override
+      public void onPrinceDeviceChanged(IBlaubotDevice oldPrince, IBlaubotDevice newPrince) {
+        System.out.println("bb onPrinceDeviceChanged: " + oldPrince + " -> " + newPrince);
+      }
+
+      @Override
+      public void onKingDeviceChanged(IBlaubotDevice oldKing, IBlaubotDevice newKing) {
+        System.out.println("bb onKingDeviceChanged: " + oldKing + " -> " + newKing);
+      }
+    });
+
     findViewById(R.id.btnListenForConnection).setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (mBluetoothAdapter == null) {
-          System.err.println("Device does not support bluetooth");
-          return;
-        }
-        if (!mBluetoothAdapter.isEnabled()) {
-          System.err.println("Bluetooth is not enabled");
-          //Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-          //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-          return;
-        }
-        System.out.println("Got adapter");
-
-        // Use a temporary object that is later assigned to mmServerSocket
-        // because mmServerSocket is final.
-        BluetoothServerSocket serverSocket = null;
         try {
-          // MY_UUID is the app's UUID string, also used by the client code.
-          serverSocket = mBluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
-        } catch (IOException e) {
-          Log.e(TAG, "Socket's listen() method failed", e);
-        }
-        System.out.println("Got serverSocket");
-
-        BluetoothSocket socket = null;
-        // Keep listening until exception occurs or a socket is returned.
-        while (true) {
-          try {
-            socket = serverSocket.accept();
-          } catch (IOException e) {
-            Log.e(TAG, "Socket's accept() method failed", e);
-            break;
-          }
-
-          System.out.println("Got socket");
-
-          if (socket != null) {
-            System.out.println("Socket was not null");
-            // A connection was accepted. Perform work associated with
-            // the connection in a separate thread.
-            manageMyConnectedSocket(socket);
-            try {
-              serverSocket.close();
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-            break;
-          } else {
-            System.out.println("Socket was null");
-          }
+          channel.publish("Hello world, from satellite!".getBytes());
+        } catch (Exception e) {
+          Log.e(TAG, "Error publishing to channel", e);
         }
       }
     });
   }
 
-  protected void manageMyConnectedSocket(final BluetoothSocket socket) {
-    new Thread(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          //System.out.println("Connecting socket");
-          //socket.connect();
-          //System.out.println("Connected socket");
-          System.out.println("Assuming socket connected");
-          InputStream is = socket.getInputStream();
-          OutputStream os = socket.getOutputStream();
-          BufferedReader br = new BufferedReader(new InputStreamReader(is));
-          String line;
-          while ((line = br.readLine()) != null) {
-            System.out.println("Read line: " + line);
-          }
-          System.out.println("Read EOF");
-          socket.close();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
-    }).start();
+  @Override
+  protected void onResume() {
+    super.onResume();
+    mBlaubot.startBlaubot();
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+    mBlaubot.stopBlaubot();
   }
 }

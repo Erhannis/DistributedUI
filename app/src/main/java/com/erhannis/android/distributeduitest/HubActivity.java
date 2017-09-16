@@ -25,83 +25,94 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Set;
 
+import eu.hgross.blaubot.android.BlaubotAndroidFactory;
+import eu.hgross.blaubot.core.Blaubot;
+import eu.hgross.blaubot.core.IBlaubotDevice;
+import eu.hgross.blaubot.core.ILifecycleListener;
+import eu.hgross.blaubot.messaging.BlaubotMessage;
+import eu.hgross.blaubot.messaging.IBlaubotChannel;
+import eu.hgross.blaubot.messaging.IBlaubotMessageListener;
+
 public class HubActivity extends AppCompatActivity implements ButtonsFragment.ButtonsFragmentCallback {
   private static final String TAG = "HubActivity";
+
+  protected static Blaubot mBlaubot;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
+    mBlaubot = BlaubotAndroidFactory.createEthernetBlaubot(SatelliteActivity.MY_UUID);
+    mBlaubot.startBlaubot();
+
+    final IBlaubotChannel channel = mBlaubot.createChannel((short)1);
+
+    // attach life cycle listener
+    mBlaubot.addLifecycleListener(new ILifecycleListener() {
+      @Override
+      public void onDisconnected() {
+        System.out.println("bb onDisconnected");
+      }
+
+      @Override
+      public void onDeviceLeft(IBlaubotDevice blaubotDevice) {
+        System.out.println("bb onDeviceLeft: " + blaubotDevice);
+      }
+
+      @Override
+      public void onDeviceJoined(IBlaubotDevice blaubotDevice) {
+        System.out.println("bb onDeviceJoined: " + blaubotDevice);
+      }
+
+      @Override
+      public void onConnected() {
+        System.out.println("bb onConnected");
+        // THIS device connected to a network
+        // you can now subscribe to channels and use them:
+        channel.subscribe(new IBlaubotMessageListener() {
+          @Override
+          public void onMessage(BlaubotMessage blaubotMessage) {
+            System.out.println("Got message: " + new String(blaubotMessage.getPayload()) + " : " + blaubotMessage);
+          }
+        });
+        channel.publish("Init: Hello world, from hub!".getBytes());
+        // onDeviceJoined(...) calls will follow for each OTHER device that was already connected
+      }
+
+      @Override
+      public void onPrinceDeviceChanged(IBlaubotDevice oldPrince, IBlaubotDevice newPrince) {
+        System.out.println("bb onPrinceDeviceChanged: " + oldPrince + " -> " + newPrince);
+      }
+
+      @Override
+      public void onKingDeviceChanged(IBlaubotDevice oldKing, IBlaubotDevice newKing) {
+        System.out.println("bb onKingDeviceChanged: " + oldKing + " -> " + newKing);
+      }
+    });
+
     findViewById(R.id.btnMoveFragment).setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (mBluetoothAdapter == null) {
-          System.err.println("Device does not support bluetooth");
-          return;
-        }
-        if (!mBluetoothAdapter.isEnabled()) {
-          System.err.println("Bluetooth is not enabled");
-          //Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-          //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-          return;
-        }
-        System.out.println("Got adapter");
-
-        //TODO Discover devices, pair?  Allow make appendage device discoverable?
-
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-        if (pairedDevices.size() > 0) {
-          // There are paired devices. Get the name and address of each paired device.
-          for (BluetoothDevice device : pairedDevices) {
-            String deviceName = device.getName();
-            String deviceHardwareAddress = device.getAddress(); // MAC address
-            System.out.println("Paired device: " + deviceName + " ; " + deviceHardwareAddress);
-          }
-        }
-
-        BluetoothSocket tmp = null;
-        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice();
-        System.out.println("Got device");
-
         try {
-          tmp = device.createRfcommSocketToServiceRecord(SatelliteActivity.MY_UUID);
-          System.out.println("Got socket");
-        } catch (IOException e) {
-          Log.e(TAG, "Socket's create() method failed", e);
-          System.out.println("Did not get socket");
+          channel.publish("Hello world, from hub!".getBytes());
+        } catch (Exception e) {
+          Log.e(TAG, "Error publishing to channel", e);
         }
-        final BluetoothSocket socket = tmp;
-
-        new Thread(new Runnable() {
-          @Override
-          public void run() {
-            try {
-              System.out.println("Connecting socket");
-              socket.connect();
-              System.out.println("Connected socket");
-              InputStream is = socket.getInputStream();
-              OutputStream os = socket.getOutputStream();
-              System.out.println("Writing to stream");
-              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os));
-              for (int i = 0; i < 10; i++) {
-                bw.write("this is test " + i + "\n");
-                bw.flush();
-              }
-              System.out.println("Wrote to stream");
-              Thread.sleep(10000);
-              bw.close();
-              socket.close();
-            } catch (IOException e) {
-              e.printStackTrace();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-            }
-          }
-        }).start();
       }
     });
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    mBlaubot.startBlaubot();
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+    mBlaubot.stopBlaubot();
   }
 
   private void proxyTest() {
