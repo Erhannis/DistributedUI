@@ -14,6 +14,9 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +36,7 @@ import eu.hgross.blaubot.messaging.BlaubotMessage;
 import eu.hgross.blaubot.messaging.IBlaubotChannel;
 import eu.hgross.blaubot.messaging.IBlaubotMessageListener;
 
-public class HubActivity extends AppCompatActivity implements ButtonsFragment.ButtonsFragmentCallback {
+public class HubActivity extends AppCompatActivity implements DistributedUiActivity {
   private static final String TAG = "HubActivity";
 
   protected static Blaubot mBlaubot;
@@ -73,10 +76,20 @@ public class HubActivity extends AppCompatActivity implements ButtonsFragment.Bu
         channel.subscribe(new IBlaubotMessageListener() {
           @Override
           public void onMessage(BlaubotMessage blaubotMessage) {
-            System.out.println("Got message: " + new String(blaubotMessage.getPayload()) + " : " + blaubotMessage);
+            try {
+              //TODO Sort messages
+              //System.out.println("Got message: " + new String(blaubotMessage.getPayload()) + " : " + blaubotMessage);
+              //TODO Static Kryo?
+              Kryo kryo = new Kryo();
+              Input in = new Input(blaubotMessage.getPayload());
+              DistributedUIMethodCall call = (DistributedUIMethodCall) kryo.readClassAndObject(in);
+              send(call.method, call.args);
+            } catch (Exception e) {
+              Log.e(TAG, "Error parsing message", e);
+            }
           }
         });
-        channel.publish("Init: Hello world, from hub!".getBytes());
+        //channel.publish("Init: Hello world, from hub!".getBytes());
         // onDeviceJoined(...) calls will follow for each OTHER device that was already connected
       }
 
@@ -95,7 +108,7 @@ public class HubActivity extends AppCompatActivity implements ButtonsFragment.Bu
       @Override
       public void onClick(View v) {
         try {
-          channel.publish("Hello world, from hub!".getBytes());
+          channel.publish("Show buttons fragment".getBytes());
         } catch (Exception e) {
           Log.e(TAG, "Error publishing to channel", e);
         }
@@ -113,34 +126,6 @@ public class HubActivity extends AppCompatActivity implements ButtonsFragment.Bu
   protected void onStop() {
     super.onStop();
     mBlaubot.stopBlaubot();
-  }
-
-  private void proxyTest() {
-    InvocationHandler handler = new InvocationHandler() {
-      @Override
-      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        System.out.println("Invoked: " + method + ", " + args);
-        if (method.getReturnType() == void.class) {
-
-        } else {
-
-        }
-        return null;
-      }
-    };
-    Class<?> proxyClass = Proxy.getProxyClass(ButtonsFragment.ButtonsFragmentCallback.class.getClassLoader(), ButtonsFragment.ButtonsFragmentCallback.class);
-    try {
-      ButtonsFragment.ButtonsFragmentCallback bfc = (ButtonsFragment.ButtonsFragmentCallback) proxyClass.getConstructor(InvocationHandler.class).newInstance(handler);
-      bfc.buttonClicked("this is a test");
-    } catch (InstantiationException e) {
-      e.printStackTrace();
-    } catch (IllegalAccessException e) {
-      e.printStackTrace();
-    } catch (InvocationTargetException e) {
-      e.printStackTrace();
-    } catch (NoSuchMethodException e) {
-      e.printStackTrace();
-    }
   }
 
   @Override
@@ -166,7 +151,16 @@ public class HubActivity extends AppCompatActivity implements ButtonsFragment.Bu
   }
 
   @Override
-  public void buttonClicked(String s) {
-    System.out.println("(HubActivity).buttonClicked(): " + s);
+  public void send(String method, Object... args) {
+    if ("buttonClicked".equals(method)) {
+      System.out.println("(HubActivity).buttonClicked(): " + args[0]);
+    } else {
+      System.out.println("unknown method: " + method);
+    }
+  }
+
+  @Override
+  public Object sendAndWait(String method, Object... args) {
+    return null;
   }
 }

@@ -15,7 +15,7 @@ import android.widget.TextView;
  */
 public class ButtonsFragment extends Fragment {
 
-  private ButtonsFragmentCallback mListener;
+  private DistributedUiActivity mListener;
 
   public ButtonsFragment() {
 
@@ -31,7 +31,7 @@ public class ButtonsFragment extends Fragment {
       @Override
       public void onClick(View v) {
         if (mListener != null) {
-          mListener.buttonClicked(etFragmentEditText.getText().toString());
+          mListener.send("buttonClicked", etFragmentEditText.getText().toString());
         }
       }
     });
@@ -42,8 +42,8 @@ public class ButtonsFragment extends Fragment {
   @Override
   public void onAttach(Context context) {
     super.onAttach(context);
-    if (context instanceof ButtonsFragmentCallback) {
-      mListener = (ButtonsFragmentCallback) context;
+    if (context instanceof DistributedUiActivity) {
+      mListener = (DistributedUiActivity) context;
     } else {
       throw new RuntimeException(context.toString() + " must implement ButtonsFragmentCallback");
     }
@@ -53,9 +53,5 @@ public class ButtonsFragment extends Fragment {
   public void onDetach() {
     super.onDetach();
     mListener = null;
-  }
-
-  public static interface ButtonsFragmentCallback {
-    public void buttonClicked(String s);
   }
 }
