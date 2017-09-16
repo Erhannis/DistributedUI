@@ -44,6 +44,7 @@ public class SatelliteActivity extends AppCompatActivity {
           //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
           return;
         }
+        System.out.println("Got adapter");
 
         // Use a temporary object that is later assigned to mmServerSocket
         // because mmServerSocket is final.
@@ -54,6 +55,7 @@ public class SatelliteActivity extends AppCompatActivity {
         } catch (IOException e) {
           Log.e(TAG, "Socket's listen() method failed", e);
         }
+        System.out.println("Got serverSocket");
 
         BluetoothSocket socket = null;
         // Keep listening until exception occurs or a socket is returned.
@@ -65,7 +67,10 @@ public class SatelliteActivity extends AppCompatActivity {
             break;
           }
 
+          System.out.println("Got socket");
+
           if (socket != null) {
+            System.out.println("Socket was not null");
             // A connection was accepted. Perform work associated with
             // the connection in a separate thread.
             manageMyConnectedSocket(socket);
@@ -75,6 +80,8 @@ public class SatelliteActivity extends AppCompatActivity {
               e.printStackTrace();
             }
             break;
+          } else {
+            System.out.println("Socket was null");
           }
         }
       }
@@ -86,7 +93,10 @@ public class SatelliteActivity extends AppCompatActivity {
       @Override
       public void run() {
         try {
-          socket.connect();
+          //System.out.println("Connecting socket");
+          //socket.connect();
+          //System.out.println("Connected socket");
+          System.out.println("Assuming socket connected");
           InputStream is = socket.getInputStream();
           OutputStream os = socket.getOutputStream();
           BufferedReader br = new BufferedReader(new InputStreamReader(is));

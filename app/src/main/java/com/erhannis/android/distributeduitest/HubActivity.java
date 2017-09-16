@@ -47,6 +47,7 @@ public class HubActivity extends AppCompatActivity implements ButtonsFragment.Bu
           //startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
           return;
         }
+        System.out.println("Got adapter");
 
         //TODO Discover devices, pair?  Allow make appendage device discoverable?
 
@@ -62,11 +63,14 @@ public class HubActivity extends AppCompatActivity implements ButtonsFragment.Bu
 
         BluetoothSocket tmp = null;
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice();
+        System.out.println("Got device");
 
         try {
           tmp = device.createRfcommSocketToServiceRecord(SatelliteActivity.MY_UUID);
+          System.out.println("Got socket");
         } catch (IOException e) {
           Log.e(TAG, "Socket's create() method failed", e);
+          System.out.println("Did not get socket");
         }
         final BluetoothSocket socket = tmp;
 
@@ -74,16 +78,24 @@ public class HubActivity extends AppCompatActivity implements ButtonsFragment.Bu
           @Override
           public void run() {
             try {
+              System.out.println("Connecting socket");
               socket.connect();
+              System.out.println("Connected socket");
               InputStream is = socket.getInputStream();
               OutputStream os = socket.getOutputStream();
+              System.out.println("Writing to stream");
               BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os));
               for (int i = 0; i < 10; i++) {
                 bw.write("this is test " + i + "\n");
                 bw.flush();
               }
+              System.out.println("Wrote to stream");
+              Thread.sleep(10000);
+              bw.close();
               socket.close();
             } catch (IOException e) {
+              e.printStackTrace();
+            } catch (InterruptedException e) {
               e.printStackTrace();
             }
           }
