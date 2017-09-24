@@ -26,6 +26,8 @@ android {
 
 repositories {
     mavenLocal()
+    jcenter()
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
@@ -40,4 +42,10 @@ dependencies {
 
     compile 'eu.hgross:blaubot-android:2+'
     compile 'com.esotericsoftware.kryo:kryo:2.23-SNAPSHOT'
+
+    compile 'net.sourceforge.streamsupport:streamsupport:1.5.6'
+    compile 'net.sourceforge.streamsupport:streamsupport-cfuture:1.5.6'
+    compile 'net.sourceforge.streamsupport:streamsupport-atomic:1.5.6'
+    compile 'net.sourceforge.streamsupport:streamsupport-flow:1.5.6'
+    compile 'net.sourceforge.streamsupport:streamsupport-literal:1.5.6'
 }

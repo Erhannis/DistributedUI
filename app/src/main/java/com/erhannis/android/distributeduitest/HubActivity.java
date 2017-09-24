@@ -3,8 +3,12 @@ package com.erhannis.android.distributeduitest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -13,6 +17,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -35,80 +40,66 @@ import eu.hgross.blaubot.core.ILifecycleListener;
 import eu.hgross.blaubot.messaging.BlaubotMessage;
 import eu.hgross.blaubot.messaging.IBlaubotChannel;
 import eu.hgross.blaubot.messaging.IBlaubotMessageListener;
+import java8.util.function.Consumer;
 
 public class HubActivity extends AppCompatActivity implements DistributedUiActivity {
   private static final String TAG = "HubActivity";
 
-  protected static Blaubot mBlaubot;
+  private boolean mIsBound = false;
+  private StarService mBoundService;
+
+  protected final Consumer<Object> mMessageCallback = new Consumer<Object>() {
+    @Override
+    public void accept(Object msg) {
+      if (msg instanceof DistributedUIMethodCall) {
+        DistributedUIMethodCall call = (DistributedUIMethodCall)msg;
+        send(call.method, call.args);
+      } else {
+        Log.e(TAG, "Received an unknown message: " + msg);
+      }
+    }
+  };
+
+  private ServiceConnection mConnection = new ServiceConnection() {
+    public void onServiceConnected(ComponentName className, IBinder service) {
+      mBoundService = ((StarService.LocalBinder)service).getService();
+      toast("Connected to star network service");
+
+      mBoundService.registerAsHub(mMessageCallback);
+    }
+
+    public void onServiceDisconnected(ComponentName className) {
+      mBoundService = null;
+      toast("Disconnected from star network service");
+    }
+  };
+
+  void doBindService() {
+    boolean bound = bindService(new Intent(HubActivity.this, StarService.class), mConnection, Context.BIND_AUTO_CREATE);
+    System.out.println("bound: " + bound);
+    mIsBound = true;
+  }
+
+  void doUnbindService() {
+    if (mIsBound) {
+      mBoundService.unregisterAsHub(mMessageCallback);
+      unbindService(mConnection);
+      mIsBound = false;
+    }
+  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    mBlaubot = BlaubotAndroidFactory.createEthernetBlaubot(SatelliteActivity.MY_UUID);
-    mBlaubot.startBlaubot();
-
-    final IBlaubotChannel channel = mBlaubot.createChannel((short)1);
-
-    // attach life cycle listener
-    mBlaubot.addLifecycleListener(new ILifecycleListener() {
-      @Override
-      public void onDisconnected() {
-        System.out.println("bb onDisconnected");
-      }
-
-      @Override
-      public void onDeviceLeft(IBlaubotDevice blaubotDevice) {
-        System.out.println("bb onDeviceLeft: " + blaubotDevice);
-      }
-
-      @Override
-      public void onDeviceJoined(IBlaubotDevice blaubotDevice) {
-        System.out.println("bb onDeviceJoined: " + blaubotDevice);
-      }
-
-      @Override
-      public void onConnected() {
-        System.out.println("bb onConnected");
-        // THIS device connected to a network
-        // you can now subscribe to channels and use them:
-        channel.subscribe(new IBlaubotMessageListener() {
-          @Override
-          public void onMessage(BlaubotMessage blaubotMessage) {
-            try {
-              //TODO Sort messages
-              //System.out.println("Got message: " + new String(blaubotMessage.getPayload()) + " : " + blaubotMessage);
-              //TODO Static Kryo?
-              Kryo kryo = new Kryo();
-              Input in = new Input(blaubotMessage.getPayload());
-              DistributedUIMethodCall call = (DistributedUIMethodCall) kryo.readClassAndObject(in);
-              send(call.method, call.args);
-            } catch (Exception e) {
-              Log.e(TAG, "Error parsing message", e);
-            }
-          }
-        });
-        //channel.publish("Init: Hello world, from hub!".getBytes());
-        // onDeviceJoined(...) calls will follow for each OTHER device that was already connected
-      }
-
-      @Override
-      public void onPrinceDeviceChanged(IBlaubotDevice oldPrince, IBlaubotDevice newPrince) {
-        System.out.println("bb onPrinceDeviceChanged: " + oldPrince + " -> " + newPrince);
-      }
-
-      @Override
-      public void onKingDeviceChanged(IBlaubotDevice oldKing, IBlaubotDevice newKing) {
-        System.out.println("bb onKingDeviceChanged: " + oldKing + " -> " + newKing);
-      }
-    });
+    doBindService();
 
     findViewById(R.id.btnMoveFragment).setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
         try {
-          channel.publish("Show buttons fragment".getBytes());
+          //channel.publish("Show buttons fragment".getBytes());
         } catch (Exception e) {
           Log.e(TAG, "Error publishing to channel", e);
         }
@@ -119,13 +110,17 @@ public class HubActivity extends AppCompatActivity implements DistributedUiActiv
   @Override
   protected void onResume() {
     super.onResume();
-    mBlaubot.startBlaubot();
   }
 
   @Override
   protected void onStop() {
     super.onStop();
-    mBlaubot.stopBlaubot();
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+    doUnbindService();
   }
 
   @Override
@@ -150,6 +145,7 @@ public class HubActivity extends AppCompatActivity implements DistributedUiActiv
     return super.onOptionsItemSelected(item);
   }
 
+  //TODO Rename?
   @Override
   public void send(String method, Object... args) {
     if ("buttonClicked".equals(method)) {
@@ -162,5 +158,15 @@ public class HubActivity extends AppCompatActivity implements DistributedUiActiv
   @Override
   public Object sendAndWait(String method, Object... args) {
     return null;
+  }
+
+  protected void toast(final String msg) {
+    runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        System.out.println("toast: " + msg);
+        Toast.makeText(HubActivity.this, msg, Toast.LENGTH_LONG).show();
+      }
+    });
   }
 }

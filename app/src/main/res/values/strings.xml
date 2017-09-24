@@ -2,4 +2,7 @@
     <string name="app_name">DistributedUiTest</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_satellite">SatelliteActivity</string>
+    <string name="local_service_started">Star network active</string>
+    <string name="local_service_stopped">Star network stopped</string>
+    <string name="local_service_label">Star network</string>
 </resources>
