@@ -19,27 +19,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.Set;
-
-import eu.hgross.blaubot.android.BlaubotAndroidFactory;
-import eu.hgross.blaubot.core.Blaubot;
-import eu.hgross.blaubot.core.IBlaubotDevice;
-import eu.hgross.blaubot.core.ILifecycleListener;
-import eu.hgross.blaubot.messaging.BlaubotMessage;
-import eu.hgross.blaubot.messaging.IBlaubotChannel;
-import eu.hgross.blaubot.messaging.IBlaubotMessageListener;
 import java8.util.function.Consumer;
 
 public class HubActivity extends AppCompatActivity implements DistributedUiActivity {
