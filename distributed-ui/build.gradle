@@ -49,3 +49,14 @@ dependencies {
     compile 'net.sourceforge.streamsupport:streamsupport-flow:1.5.6'
     compile 'net.sourceforge.streamsupport:streamsupport-literal:1.5.6'
 }
+
+apply plugin: 'maven'
+
+group = 'com.erhannis'
+version = '1.0'
+
+uploadArchives {
+    repositories {
+        mavenLocal()
+    }
+}
