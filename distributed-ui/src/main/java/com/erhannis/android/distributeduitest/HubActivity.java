@@ -58,6 +58,7 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
 
   void doBindService() {
     boolean bound = bindService(new Intent(HubActivity.this, StarService.class), mConnection, Context.BIND_AUTO_CREATE);
+    //TODO Change out logging
     System.out.println("bound: " + bound);
     mIsBound = true;
   }
@@ -73,20 +74,7 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-
     doBindService();
-
-    findViewById(R.id.btnMoveFragment).setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        try {
-          //channel.publish("Show buttons fragment".getBytes());
-        } catch (Exception e) {
-          Log.e(TAG, "Error publishing to channel", e);
-        }
-      }
-    });
   }
 
   @Override
