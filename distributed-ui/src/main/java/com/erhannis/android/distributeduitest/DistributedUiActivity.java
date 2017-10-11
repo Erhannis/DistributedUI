@@ -13,6 +13,7 @@ import java.util.Map;
  */
 
 public interface DistributedUiActivity {
+  public boolean implementsInterface(Class iface);
   public void sendToHub(String method, Object... args);
   public Object sendToHubAndWait(String method, Object... args);
   public void sendToSatellites(String method, Object... args);

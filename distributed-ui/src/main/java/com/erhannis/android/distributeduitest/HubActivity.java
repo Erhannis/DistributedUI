@@ -1,22 +1,16 @@
 package com.erhannis.android.distributeduitest;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import java.util.Map;
@@ -34,7 +28,14 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
     public void accept(Object msg) {
       if (msg instanceof DistributedUIMethodCall) {
         DistributedUIMethodCall call = (DistributedUIMethodCall)msg;
-        onMessage(call.method, call.args);
+        switch (call.method) {
+          case "implementsInterface":
+            //TODO TODO Do
+            break;
+          default:
+            onMessage(call.method, call.args);
+            break;
+        }
       } else {
         Log.e(TAG, "Received an unknown message: " + msg);
       }
@@ -154,6 +155,11 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
   @Override
   public Object sendToSatelliteAndWait(String satellite, String method, Object... args) {
     return mBoundService.sendToSatelliteAndWait(satellite, new DistributedUIMethodCall(method, args));
+  }
+
+  @Override
+  public boolean implementsInterface(Class iface) {
+    return iface.isAssignableFrom(this.getClass());
   }
 
   protected void toast(final String msg) {

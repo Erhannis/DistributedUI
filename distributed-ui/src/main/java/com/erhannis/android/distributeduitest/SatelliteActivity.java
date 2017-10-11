@@ -1,42 +1,24 @@
 package com.erhannis.android.distributeduitest;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothServerSocket;
-import android.bluetooth.BluetoothSocket;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Output;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.lang.reflect.Proxy;
 import java.util.Map;
 import java.util.UUID;
 
 import java8.util.function.Consumer;
 
-public abstract class SatelliteActivity extends AppCompatActivity implements DistributedUiActivity {
+public class SatelliteActivity extends AppCompatActivity implements DistributedUiActivity {
   private static final String TAG = "SatelliteActivity";
   public static final String NAME = "DistUIName";
   public static final UUID MY_UUID = UUID.fromString("e72cd6c5-2c05-42ca-8f77-91d90649c970");
@@ -113,12 +95,23 @@ public abstract class SatelliteActivity extends AppCompatActivity implements Dis
       //TODO Just a test hack
       FragmentManager fragmentManager = getSupportFragmentManager();
       FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-      ButtonsFragment fragment = new ButtonsFragment();
-      fragmentTransaction.add(R.id.llFragmentHolder, fragment);
-      fragmentTransaction.commit();
+      try {
+        Class<? extends Fragment> fragmentClass = (Class<? extends Fragment>) args[0];
+        Fragment fragment = fragmentClass.newInstance();
+        fragmentTransaction.add(R.id.llFragmentHolder, fragment);
+        fragmentTransaction.commit();
+      } catch (Exception e) {
+        Log.e(TAG, "Error moving fragment", e);
+      }
     } else {
       System.out.println("unknown method: " + method);
     }
+  }
+
+  @Override
+  public boolean implementsInterface(Class iface) {
+    //TODO TODO Do
+    return true;
   }
 
   @Override
@@ -149,6 +142,12 @@ public abstract class SatelliteActivity extends AppCompatActivity implements Dis
   @Override
   public Object sendToSatelliteAndWait(String satellite, String method, Object... args) {
     return mBoundService.sendToSatelliteAndWait(satellite, new DistributedUIMethodCall(method, args));
+  }
+
+  @Override
+  public Object onMessage(String method, Object... args) {
+    //TODO TODO Do
+    return null;
   }
 
   protected void toast(final String msg) {

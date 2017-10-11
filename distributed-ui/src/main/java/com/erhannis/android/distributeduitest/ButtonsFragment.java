@@ -42,7 +42,7 @@ public class ButtonsFragment extends Fragment {
   @Override
   public void onAttach(Context context) {
     super.onAttach(context);
-    if (context instanceof DistributedUiActivity) {
+    if (context instanceof DistributedUiActivity && ((DistributedUiActivity)context).implementsInterface(ButtonsFragmentCallback.class)) {
       mListener = (DistributedUiActivity) context;
     } else {
       throw new RuntimeException(context.toString() + " must implement ButtonsFragmentCallback");
@@ -53,5 +53,9 @@ public class ButtonsFragment extends Fragment {
   public void onDetach() {
     super.onDetach();
     mListener = null;
+  }
+
+  public static interface ButtonsFragmentCallback {
+    public void buttonClicked(String str);
   }
 }
