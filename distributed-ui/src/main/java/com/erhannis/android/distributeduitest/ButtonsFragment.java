@@ -31,7 +31,7 @@ public class ButtonsFragment extends Fragment {
       @Override
       public void onClick(View v) {
         if (mListener != null) {
-          mListener.send("buttonClicked", etFragmentEditText.getText().toString());
+          mListener.sendToHub("buttonClicked", etFragmentEditText.getText().toString());
         }
       }
     });

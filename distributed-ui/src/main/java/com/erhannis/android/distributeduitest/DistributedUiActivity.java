@@ -1,5 +1,7 @@
 package com.erhannis.android.distributeduitest;
 
+import java.util.Map;
+
 /**
  *
  * An activity hosting a remotable fragment should use this class, for the fragment to call back to it.
@@ -11,6 +13,11 @@ package com.erhannis.android.distributeduitest;
  */
 
 public interface DistributedUiActivity {
-  public void send(String method, Object... args);
-  public Object sendAndWait(String method, Object... args);
+  public void sendToHub(String method, Object... args);
+  public Object sendToHubAndWait(String method, Object... args);
+  public void sendToSatellites(String method, Object... args);
+  public Map<String, Object> sendToSatellitesAndWait(String method, Object... args);
+  public void sendToSatellite(String satellite, String method, Object... args);
+  public Object sendToSatelliteAndWait(String satellite, String method, Object... args);
+  public Object onMessage(String method, Object... args);
 }

@@ -31,11 +31,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.lang.reflect.Proxy;
+import java.util.Map;
 import java.util.UUID;
 
 import java8.util.function.Consumer;
 
-public class SatelliteActivity extends AppCompatActivity implements DistributedUiActivity {
+public abstract class SatelliteActivity extends AppCompatActivity implements DistributedUiActivity {
   private static final String TAG = "SatelliteActivity";
   public static final String NAME = "DistUIName";
   public static final UUID MY_UUID = UUID.fromString("e72cd6c5-2c05-42ca-8f77-91d90649c970");
@@ -48,7 +49,7 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
     public void accept(Object msg) {
       if (msg instanceof DistributedUIMethodCall) {
         DistributedUIMethodCall call = (DistributedUIMethodCall)msg;
-        send(call.method, call.args);
+        onMessage(call.method, call.args);
       } else {
         Log.e(TAG, "Received an unknown message: " + msg);
       }
@@ -60,7 +61,7 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
       mBoundService = ((StarService.LocalBinder)service).getService();
       toast("Connected to star network service");
 
-      mBoundService.registerAsHub(mMessageCallback);
+      mBoundService.registerAsSatellite(mMessageCallback);
     }
 
     public void onServiceDisconnected(ComponentName className) {
@@ -77,7 +78,7 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
 
   void doUnbindService() {
     if (mIsBound) {
-      mBoundService.unregisterAsHub(mMessageCallback);
+      mBoundService.unregisterAsSatellite(mMessageCallback);
       unbindService(mConnection);
       mIsBound = false;
     }
@@ -89,13 +90,6 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
     setContentView(R.layout.activity_satellite);
 
     doBindService();
-
-    findViewById(R.id.btnListenForConnection).setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        mBoundService.sendToHub(new DistributedUIMethodCall("buttonClicked", new Object[]{}));
-      }
-    });
   }
 
   @Override
@@ -109,7 +103,12 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
   }
 
   @Override
-  public void send(String method, Object... args) {
+  protected void onDestroy() {
+    super.onDestroy();
+    doUnbindService();
+  }
+
+  public void onReceiveFragment(String method, Object... args) {
     if ("moveFragment".equals(method)) {
       //TODO Just a test hack
       FragmentManager fragmentManager = getSupportFragmentManager();
@@ -123,8 +122,33 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
   }
 
   @Override
-  public Object sendAndWait(String method, Object... args) {
-    return null;
+  public void sendToHub(String method, Object... args) {
+    mBoundService.sendToHub(new DistributedUIMethodCall(method, args));
+  }
+
+  @Override
+  public Object sendToHubAndWait(String method, Object... args) {
+    return mBoundService.sendToHubAndWait(new DistributedUIMethodCall(method, args));
+  }
+
+  @Override
+  public void sendToSatellites(String method, Object... args) {
+    mBoundService.sendToSatellites(new DistributedUIMethodCall(method, args));
+  }
+
+  @Override
+  public Map<String, Object> sendToSatellitesAndWait(String method, Object... args) {
+    return mBoundService.sendToSatellitesAndWait(new DistributedUIMethodCall(method, args));
+  }
+
+  @Override
+  public void sendToSatellite(String satellite, String method, Object... args) {
+    mBoundService.sendToSatellite(satellite, new DistributedUIMethodCall(method, args));
+  }
+
+  @Override
+  public Object sendToSatelliteAndWait(String satellite, String method, Object... args) {
+    return mBoundService.sendToSatelliteAndWait(satellite, new DistributedUIMethodCall(method, args));
   }
 
   protected void toast(final String msg) {

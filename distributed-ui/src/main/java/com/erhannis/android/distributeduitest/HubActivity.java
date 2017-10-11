@@ -19,9 +19,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import java.util.Map;
+
 import java8.util.function.Consumer;
 
-public class HubActivity extends AppCompatActivity implements DistributedUiActivity {
+public abstract class HubActivity extends AppCompatActivity implements DistributedUiActivity {
   private static final String TAG = "HubActivity";
 
   private boolean mIsBound = false;
@@ -32,7 +34,7 @@ public class HubActivity extends AppCompatActivity implements DistributedUiActiv
     public void accept(Object msg) {
       if (msg instanceof DistributedUIMethodCall) {
         DistributedUIMethodCall call = (DistributedUIMethodCall)msg;
-        send(call.method, call.args);
+        onMessage(call.method, call.args);
       } else {
         Log.e(TAG, "Received an unknown message: " + msg);
       }
@@ -124,19 +126,34 @@ public class HubActivity extends AppCompatActivity implements DistributedUiActiv
     return super.onOptionsItemSelected(item);
   }
 
-  //TODO Rename?
   @Override
-  public void send(String method, Object... args) {
-    if ("buttonClicked".equals(method)) {
-      System.out.println("(HubActivity).buttonClicked(): " + args[0]);
-    } else {
-      System.out.println("unknown method: " + method);
-    }
+  public void sendToHub(String method, Object... args) {
+    onMessage(method, args);
   }
 
   @Override
-  public Object sendAndWait(String method, Object... args) {
-    return null;
+  public Object sendToHubAndWait(String method, Object... args) {
+    return onMessage(method, args);
+  }
+
+  @Override
+  public void sendToSatellites(String method, Object... args) {
+    mBoundService.sendToSatellites(new DistributedUIMethodCall(method, args));
+  }
+
+  @Override
+  public Map<String, Object> sendToSatellitesAndWait(String method, Object... args) {
+    return mBoundService.sendToSatellitesAndWait(new DistributedUIMethodCall(method, args));
+  }
+
+  @Override
+  public void sendToSatellite(String satellite, String method, Object... args) {
+    mBoundService.sendToSatellite(satellite, new DistributedUIMethodCall(method, args));
+  }
+
+  @Override
+  public Object sendToSatelliteAndWait(String satellite, String method, Object... args) {
+    return mBoundService.sendToSatelliteAndWait(satellite, new DistributedUIMethodCall(method, args));
   }
 
   protected void toast(final String msg) {

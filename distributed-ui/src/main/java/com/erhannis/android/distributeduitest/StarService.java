@@ -16,6 +16,7 @@ import com.esotericsoftware.kryo.io.Output;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import eu.hgross.blaubot.android.BlaubotAndroidFactory;
@@ -103,7 +104,8 @@ public class StarService extends Service {
                                         }
                                     }
                                 } else if (msg instanceof StarMessageToSatellite) {
-                                    if (mBlaubot.getOwnDevice().getUniqueDeviceID().equals(((StarMessageToSatellite)msg).satellite)) {
+                                    String target = ((StarMessageToSatellite)msg).satellite;
+                                    if ((target == null) || mBlaubot.getOwnDevice().getUniqueDeviceID().equals(target)) {
                                         for (Consumer<Object> satellite : mSatellites) {
                                             try {
                                                 satellite.accept(((StarMessageToSatellite)msg).payload);
@@ -228,8 +230,17 @@ public class StarService extends Service {
         }
     }
 
-    //TODO Do
+    //TODO TODO Do
     public Object sendToHubAndWait(Object msg) {
+        return null;
+    }
+
+    public void sendToSatellites(Object msg) {
+        sendToSatellite(null, msg);
+    }
+
+    //TODO TODO Do
+    public Map<String, Object> sendToSatellitesAndWait(Object msg) {
         return null;
     }
 
@@ -252,6 +263,7 @@ public class StarService extends Service {
         }
     }
 
+    //TODO TODO Do
     public Object sendToSatelliteAndWait(Object satellite, Object msg) {
         return null;
     }
