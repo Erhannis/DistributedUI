@@ -16,7 +16,10 @@ import com.esotericsoftware.kryo.io.Output;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import eu.hgross.blaubot.android.BlaubotAndroidFactory;
@@ -190,8 +193,8 @@ public class StarService extends Service {
         mNM.notify(NOTIFICATION, notification);
     }
 
-    protected ConcurrentSkipListSet<Consumer<Object>> mHubs = new ConcurrentSkipListSet<>();
-    protected ConcurrentSkipListSet<Consumer<Object>> mSatellites = new ConcurrentSkipListSet<>();
+    protected final Set<Consumer<Object>> mHubs = Collections.newSetFromMap(new ConcurrentHashMap<Consumer<Object>, Boolean>());
+    protected final Set<Consumer<Object>> mSatellites = Collections.newSetFromMap(new ConcurrentHashMap<Consumer<Object>, Boolean>());
 
     public void registerAsHub(Consumer<Object> msgCallback) {
         //TODO Make sure there isn't already a hub...wait, then why do I have a set
