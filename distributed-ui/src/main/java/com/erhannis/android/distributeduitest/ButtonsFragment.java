@@ -45,7 +45,7 @@ public class ButtonsFragment extends Fragment {
     if (context instanceof DistributedUiActivity && ((DistributedUiActivity)context).implementsInterface(ButtonsFragmentCallback.class)) {
       mListener = (DistributedUiActivity) context;
     } else {
-      throw new RuntimeException(context.toString() + " must implement ButtonsFragmentCallback");
+      throw new RuntimeException(context.toString() + " must report implementation of ButtonsFragmentCallback");
     }
   }
 
