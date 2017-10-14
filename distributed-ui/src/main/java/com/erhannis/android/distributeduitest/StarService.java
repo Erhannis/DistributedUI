@@ -17,6 +17,8 @@ import com.esotericsoftware.kryo.io.Output;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,6 +32,9 @@ import eu.hgross.blaubot.messaging.BlaubotMessage;
 import eu.hgross.blaubot.messaging.IBlaubotChannel;
 import eu.hgross.blaubot.messaging.IBlaubotMessageListener;
 import java8.util.function.Consumer;
+import java8.util.function.Function;
+import java8.util.stream.Collectors;
+import java8.util.stream.StreamSupport;
 
 public class StarService extends Service {
     private static final String TAG = "StarService";
@@ -108,7 +113,7 @@ public class StarService extends Service {
                                     }
                                 } else if (msg instanceof StarMessageToSatellite) {
                                     String target = ((StarMessageToSatellite)msg).satellite;
-                                    if ((target == null) || mBlaubot.getOwnDevice().getUniqueDeviceID().equals(target)) {
+                                    if ((target == null) || getId().equals(target)) {
                                         for (Consumer<Object> satellite : mSatellites) {
                                             try {
                                                 satellite.accept(((StarMessageToSatellite)msg).payload);
@@ -158,6 +163,19 @@ public class StarService extends Service {
         // Tell the user we stopped.
         Toast.makeText(this, R.string.local_service_stopped, Toast.LENGTH_SHORT).show();
     }
+
+    public String getId() {
+        return mBlaubot.getOwnDevice().getUniqueDeviceID();
+    }
+
+    public List<String> getOtherDevices() {
+        return StreamSupport.stream(mBlaubot.getConnectionManager().getConnectedDevices()).map(new Function<IBlaubotDevice, String>() {
+            @Override
+            public String apply(IBlaubotDevice iBlaubotDevice) {
+                return iBlaubotDevice.getUniqueDeviceID();
+            }
+        }).collect(Collectors.<String>toList());
+    };
 
     @Override
     public IBinder onBind(Intent intent) {

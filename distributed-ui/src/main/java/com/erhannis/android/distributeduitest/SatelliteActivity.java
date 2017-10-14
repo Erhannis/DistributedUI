@@ -32,6 +32,18 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
       if (msg instanceof DistributedUIMethodCall) {
         DistributedUIMethodCall call = (DistributedUIMethodCall)msg;
         onMessage(call.method, call.args);
+      } else if (msg instanceof DistributedUIFragmentChange) {
+        DistributedUIFragmentChange change = (DistributedUIFragmentChange)msg;
+        switch (change.type) {
+          case HOST_FRAGMENT:
+            hostFragment(change.fragment);
+            break;
+          case DROP_FRAGMENT:
+            dropFragment(change.fragment);
+            break;
+          default:
+            throw new IllegalArgumentException("Unknown change type: " + change.type);
+        }
       } else {
         Log.e(TAG, "Received an unknown message: " + msg);
       }
@@ -90,22 +102,33 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
     doUnbindService();
   }
 
-  public void onReceiveFragment(String method, Object... args) {
-    if ("moveFragment".equals(method)) {
-      //TODO Just a test hack
-      FragmentManager fragmentManager = getSupportFragmentManager();
-      FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-      try {
-        Class<? extends Fragment> fragmentClass = (Class<? extends Fragment>) args[0];
-        Fragment fragment = fragmentClass.newInstance();
-        fragmentTransaction.add(R.id.llFragmentHolder, fragment);
+  public void hostFragment(FragmentHandle fragmentHandle) {
+    FragmentManager fragmentManager = getSupportFragmentManager();
+    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+    try {
+      Fragment fragment = fragmentManager.findFragmentByTag(fragmentHandle.name);
+      if (fragment == null) {
+        fragment = fragmentHandle.clazz.newInstance();
+        fragmentTransaction.add(R.id.llFragmentHolder, fragment, fragmentHandle.name);
         fragmentTransaction.commit();
-      } catch (Exception e) {
-        Log.e(TAG, "Error moving fragment", e);
+      } else {
+        Log.e(TAG, "Fragment already hosted: " + fragmentHandle.name);
       }
-    } else {
-      System.out.println("unknown method: " + method);
+    } catch (Exception e) {
+      Log.e(TAG, "Error moving fragment", e);
     }
+  }
+
+  public void dropFragment(FragmentHandle fragmentHandle) {
+    FragmentManager fragmentManager = getSupportFragmentManager();
+    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+    Fragment fragment = fragmentManager.findFragmentByTag(fragmentHandle.name);
+    if (fragment != null) {
+      fragmentTransaction.remove(fragment);
+    } else {
+      Log.e(TAG, "Fragment not found: " + fragmentHandle.name);
+    }
+    fragmentTransaction.commit();
   }
 
   @Override

@@ -13,9 +13,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import eu.hgross.blaubot.core.IBlaubotDevice;
 import java8.util.function.Consumer;
+import java8.util.function.Function;
+import java8.util.stream.Collectors;
+import java8.util.stream.StreamSupport;
 
 public abstract class HubActivity extends AppCompatActivity implements DistributedUiActivity {
   private static final String TAG = "HubActivity";

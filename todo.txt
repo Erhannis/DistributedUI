@@ -1,0 +1,5 @@
+Deal with disconnects
+  auto-recall fragments?
+Deal with no internet
+Deal with auto(re)connection
+Manage fragment locations
