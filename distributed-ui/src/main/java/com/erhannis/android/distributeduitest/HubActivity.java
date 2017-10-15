@@ -156,6 +156,11 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
     return iface.isAssignableFrom(this.getClass());
   }
 
+  //TODO This is a hack
+  public void sendRawToSatellites(Object msg) {
+    mBoundService.sendToSatellites(msg);
+  }
+
   protected void toast(final String msg) {
     runOnUiThread(new Runnable() {
       @Override
