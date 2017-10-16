@@ -5,6 +5,9 @@ package com.erhannis.android.distributeduitest;
  */
 
 public class StarMessageToHub extends StarMessage {
+  public StarMessageToHub() {
+  }
+
   public StarMessageToHub(Object payload) {
     super(payload);
   }

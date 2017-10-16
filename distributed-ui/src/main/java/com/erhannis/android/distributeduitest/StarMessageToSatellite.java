@@ -7,6 +7,9 @@ package com.erhannis.android.distributeduitest;
 public class StarMessageToSatellite extends StarMessage {
   public String satellite;
 
+  public StarMessageToSatellite() {
+  }
+
   public StarMessageToSatellite(String satellite, Object payload) {
     super(payload);
     this.satellite = satellite;

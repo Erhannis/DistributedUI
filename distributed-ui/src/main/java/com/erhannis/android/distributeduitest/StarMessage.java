@@ -7,6 +7,9 @@ package com.erhannis.android.distributeduitest;
 public class StarMessage {
   public Object payload;
 
+  public StarMessage() {
+  }
+
   public StarMessage(Object payload) {
     this.payload = payload;
   }
