@@ -12,6 +12,11 @@ public class FragmentHandle {
   public final Class<? extends Fragment> clazz;
   public final String name;
 
+  public FragmentHandle() {
+    this.clazz = null;
+    this.name = null;
+  }
+
   public FragmentHandle(Class<? extends Fragment> clazz, String name) {
     this.clazz = clazz;
     this.name = name;
