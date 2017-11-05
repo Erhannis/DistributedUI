@@ -1,4 +1,6 @@
-package com.erhannis.android.distributeduitest;
+package com.erhannis.android.distributeduitest.starnetwork;
+
+import com.erhannis.android.distributeduitest.starnetwork.StarMessage;
 
 /**
  * Created by erhannis on 9/23/17.

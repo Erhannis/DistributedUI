@@ -1,5 +1,7 @@
 package com.erhannis.android.distributeduitest;
 
+import com.erhannis.android.distributeduitest.starnetwork.StarService;
+
 import java.util.Map;
 
 /**
@@ -12,13 +14,7 @@ import java.util.Map;
  * Created by erhannis on 9/16/17.
  */
 
-public interface DistributedUiActivity {
+public interface DistributedUiActivity extends DistributedUiCommunicator {
   public boolean implementsInterface(Class iface);
-  public void sendToHub(String method, Object... args);
-  public Object sendToHubAndWait(String method, Object... args);
-  public void sendToSatellites(String method, Object... args);
-  public Map<String, Object> sendToSatellitesAndWait(String method, Object... args);
-  public void sendToSatellite(String satellite, String method, Object... args);
-  public Object sendToSatelliteAndWait(String satellite, String method, Object... args);
   public Object onMessage(String method, Object... args);
 }

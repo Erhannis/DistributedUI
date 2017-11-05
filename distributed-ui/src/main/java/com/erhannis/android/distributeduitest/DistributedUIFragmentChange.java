@@ -7,18 +7,14 @@ import android.support.v4.app.Fragment;
  */
 
 public class DistributedUIFragmentChange {
-  public static enum ChangeType {
-    HOST_FRAGMENT, DROP_FRAGMENT;
-  }
-
-  public ChangeType type;
+  public String target;
   public FragmentHandle fragment;
 
   public DistributedUIFragmentChange() {
   }
 
-  public DistributedUIFragmentChange(ChangeType type, FragmentHandle fragment) {
-    this.type = type;
+  public DistributedUIFragmentChange(String target, FragmentHandle fragment) {
+    this.target = target;
     this.fragment = fragment;
   }
 }

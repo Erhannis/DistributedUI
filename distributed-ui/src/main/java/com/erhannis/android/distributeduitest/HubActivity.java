@@ -13,6 +13,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.erhannis.android.distributeduitest.starnetwork.StarService;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,33 +29,42 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
   private static final String TAG = "HubActivity";
 
   private boolean mIsBound = false;
-  private StarService mBoundService;
+  private UiMovementService mBoundService;
 
-  protected final Consumer<Object> mMessageCallback = new Consumer<Object>() {
+  protected final Consumer<FragmentHandle> mHostFragmentCallback = new Consumer<FragmentHandle>() {
     @Override
-    public void accept(Object msg) {
-      if (msg instanceof DistributedUIMethodCall) {
-        DistributedUIMethodCall call = (DistributedUIMethodCall)msg;
-        switch (call.method) {
-          case "implementsInterface":
-            //TODO TODO Do
-            break;
-          default:
-            onMessage(call.method, call.args);
-            break;
-        }
-      } else {
-        Log.e(TAG, "Received an unknown message: " + msg);
+    public void accept(FragmentHandle f) {
+      hostFragment(f);
+    }
+  };
+
+  protected final Consumer<FragmentHandle> mDropFragmentCallback = new Consumer<FragmentHandle>() {
+    @Override
+    public void accept(FragmentHandle f) {
+      dropFragment(f);
+    }
+  };
+
+  protected final Consumer<DistributedUIMethodCall> mRpcCallback = new Consumer<DistributedUIMethodCall>() {
+    @Override
+    public void accept(DistributedUIMethodCall msg) {
+      switch (msg.method) {
+        case "implementsInterface":
+          //TODO TODO Do
+          break;
+        default:
+          onMessage(msg.method, msg.args);
+          break;
       }
     }
   };
 
   private ServiceConnection mConnection = new ServiceConnection() {
     public void onServiceConnected(ComponentName className, IBinder service) {
-      mBoundService = ((StarService.LocalBinder)service).getService();
+      mBoundService = ((UiMovementService.LocalBinder)service).getService();
       toast("Connected to star network service");
 
-      mBoundService.registerAsHub(mMessageCallback);
+      mBoundService.registerCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
     }
 
     public void onServiceDisconnected(ComponentName className) {
@@ -71,7 +82,7 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
 
   void doUnbindService() {
     if (mIsBound) {
-      mBoundService.unregisterAsHub(mMessageCallback);
+      mBoundService.unregisterCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
       unbindService(mConnection);
       mIsBound = false;
     }
@@ -121,6 +132,10 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
     return super.onOptionsItemSelected(item);
   }
 
+  public abstract void hostFragment(FragmentHandle fragmentHandle);
+
+  public abstract void dropFragment(FragmentHandle fragmentHandle);
+
   @Override
   public void sendToHub(String method, Object... args) {
     onMessage(method, args);
@@ -133,32 +148,27 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
 
   @Override
   public void sendToSatellites(String method, Object... args) {
-    mBoundService.sendToSatellites(new DistributedUIMethodCall(method, args));
+    mBoundService.sendToSatellites(method, args);
   }
 
   @Override
   public Map<String, Object> sendToSatellitesAndWait(String method, Object... args) {
-    return mBoundService.sendToSatellitesAndWait(new DistributedUIMethodCall(method, args));
+    return mBoundService.sendToSatellitesAndWait(method, args);
   }
 
   @Override
   public void sendToSatellite(String satellite, String method, Object... args) {
-    mBoundService.sendToSatellite(satellite, new DistributedUIMethodCall(method, args));
+    mBoundService.sendToSatellite(satellite, method, args);
   }
 
   @Override
   public Object sendToSatelliteAndWait(String satellite, String method, Object... args) {
-    return mBoundService.sendToSatelliteAndWait(satellite, new DistributedUIMethodCall(method, args));
+    return mBoundService.sendToSatelliteAndWait(satellite, method, args);
   }
 
   @Override
   public boolean implementsInterface(Class iface) {
     return iface.isAssignableFrom(this.getClass());
-  }
-
-  //TODO This is a hack
-  public void sendRawToSatellites(Object msg) {
-    mBoundService.sendToSatellites(msg);
   }
 
   protected void toast(final String msg) {

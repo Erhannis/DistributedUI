@@ -34,19 +34,19 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+
+
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.android.support:design:25.3.1'
-    testCompile 'junit:junit:4.12'
-
-    compile 'eu.hgross:blaubot-android:2+'
+    compile 'eu.hgross:blaubot-android:2.+'
     compile 'com.esotericsoftware.kryo:kryo:2.23-SNAPSHOT'
-
     compile 'net.sourceforge.streamsupport:streamsupport:1.5.6'
     compile 'net.sourceforge.streamsupport:streamsupport-cfuture:1.5.6'
     compile 'net.sourceforge.streamsupport:streamsupport-atomic:1.5.6'
     compile 'net.sourceforge.streamsupport:streamsupport-flow:1.5.6'
     compile 'net.sourceforge.streamsupport:streamsupport-literal:1.5.6'
+    testCompile 'junit:junit:4.12'
 }
 
 apply plugin: 'maven'

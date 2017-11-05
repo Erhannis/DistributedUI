@@ -13,6 +13,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.erhannis.android.distributeduitest.starnetwork.StarService;
+
 import java.util.Map;
 import java.util.UUID;
 
@@ -21,46 +23,41 @@ import java8.util.function.Consumer;
 public class SatelliteActivity extends AppCompatActivity implements DistributedUiActivity {
   private static final String TAG = "SatelliteActivity";
   public static final String NAME = "DistUIName";
-  public static final UUID MY_UUID = UUID.fromString("e72cd6c5-2c05-42ca-8f77-91d90649c970");
 
   private boolean mIsBound = false;
-  private StarService mBoundService;
+  private UiMovementService mBoundService;
 
-  protected final Consumer<Object> mMessageCallback = new Consumer<Object>() {
+  protected final Consumer<FragmentHandle> mHostFragmentCallback = new Consumer<FragmentHandle>() {
     @Override
-    public void accept(Object msg) {
-      if (msg instanceof DistributedUIMethodCall) {
-        DistributedUIMethodCall call = (DistributedUIMethodCall)msg;
-        onMessage(call.method, call.args);
-      } else if (msg instanceof DistributedUIFragmentChange) {
-        DistributedUIFragmentChange change = (DistributedUIFragmentChange)msg;
-        switch (change.type) {
-          case HOST_FRAGMENT:
-            hostFragment(change.fragment);
-            break;
-          case DROP_FRAGMENT:
-            dropFragment(change.fragment);
-            break;
-          default:
-            throw new IllegalArgumentException("Unknown change type: " + change.type);
-        }
-      } else {
-        Log.e(TAG, "Received an unknown message: " + msg);
-      }
+    public void accept(FragmentHandle f) {
+      hostFragment(f);
     }
   };
 
-  private ServiceConnection mConnection = new ServiceConnection() {
-    public void onServiceConnected(ComponentName className, IBinder service) {
-      mBoundService = ((StarService.LocalBinder)service).getService();
-      toast("Connected to star network service");
+  protected final Consumer<FragmentHandle> mDropFragmentCallback = new Consumer<FragmentHandle>() {
+    @Override
+    public void accept(FragmentHandle f) {
+      dropFragment(f);
+    }
+  };
 
-      mBoundService.registerAsSatellite(mMessageCallback);
+  protected final Consumer<DistributedUIMethodCall> mRpcCallback = new Consumer<DistributedUIMethodCall>() {
+    @Override
+    public void accept(DistributedUIMethodCall msg) {
+      onMessage(msg.method, msg.args);
+    }
+  };
+
+  private final ServiceConnection mConnection = new ServiceConnection() {
+    public void onServiceConnected(ComponentName className, IBinder service) {
+      mBoundService = ((UiMovementService.LocalBinder)service).getService();
+      mBoundService.registerCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
+      toast("Connected to ui movement service");
     }
 
     public void onServiceDisconnected(ComponentName className) {
       mBoundService = null;
-      toast("Disconnected from star network service");
+      toast("Disconnected from ui movement service");
     }
   };
 
@@ -72,7 +69,7 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
 
   void doUnbindService() {
     if (mIsBound) {
-      mBoundService.unregisterAsSatellite(mMessageCallback);
+      mBoundService.unregisterCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
       unbindService(mConnection);
       mIsBound = false;
     }
@@ -121,14 +118,14 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
 
   public void dropFragment(FragmentHandle fragmentHandle) {
     FragmentManager fragmentManager = getSupportFragmentManager();
-    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
     Fragment fragment = fragmentManager.findFragmentByTag(fragmentHandle.name);
     if (fragment != null) {
+      FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
       fragmentTransaction.remove(fragment);
+      fragmentTransaction.commit();
     } else {
-      Log.e(TAG, "Fragment not found: " + fragmentHandle.name);
+      Log.d(TAG, "Fragment not found: " + fragmentHandle.name);
     }
-    fragmentTransaction.commit();
   }
 
   @Override
@@ -137,35 +134,37 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
     return true;
   }
 
+  //<editor-fold desc="Comms pass-through">
   @Override
   public void sendToHub(String method, Object... args) {
-    mBoundService.sendToHub(new DistributedUIMethodCall(method, args));
+    mBoundService.sendToHub(method, args);
   }
 
   @Override
   public Object sendToHubAndWait(String method, Object... args) {
-    return mBoundService.sendToHubAndWait(new DistributedUIMethodCall(method, args));
+    return mBoundService.sendToHubAndWait(method, args);
   }
 
   @Override
   public void sendToSatellites(String method, Object... args) {
-    mBoundService.sendToSatellites(new DistributedUIMethodCall(method, args));
+    mBoundService.sendToSatellites(method, args);
   }
 
   @Override
   public Map<String, Object> sendToSatellitesAndWait(String method, Object... args) {
-    return mBoundService.sendToSatellitesAndWait(new DistributedUIMethodCall(method, args));
+    return mBoundService.sendToSatellitesAndWait(method, args);
   }
 
   @Override
   public void sendToSatellite(String satellite, String method, Object... args) {
-    mBoundService.sendToSatellite(satellite, new DistributedUIMethodCall(method, args));
+    mBoundService.sendToSatellite(satellite, method, args);
   }
 
   @Override
   public Object sendToSatelliteAndWait(String satellite, String method, Object... args) {
-    return mBoundService.sendToSatelliteAndWait(satellite, new DistributedUIMethodCall(method, args));
+    return mBoundService.sendToSatelliteAndWait(satellite, method, args);
   }
+  //</editor-fold>
 
   @Override
   public Object onMessage(String method, Object... args) {

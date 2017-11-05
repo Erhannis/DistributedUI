@@ -1,4 +1,4 @@
-package com.erhannis.android.distributeduitest;
+package com.erhannis.android.distributeduitest.starnetwork;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -10,6 +10,8 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.erhannis.android.distributeduitest.R;
+import com.erhannis.android.distributeduitest.SatelliteActivity;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -21,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -39,11 +42,14 @@ import java8.util.stream.StreamSupport;
 public class StarService extends Service {
     private static final String TAG = "StarService";
 
+    public static final UUID STAR_NET_UUID = UUID.fromString("e72cd6c5-2c05-42ca-8f77-91d90649c970");
+
     private NotificationManager mNM;
 
     // Unique Identification Number for the Notification.
     // We use it on Notification start, and to cancel it.
-    private int NOTIFICATION = R.string.local_service_started;
+    //TODO This is kindof a weird value
+    public static int NOTIFICATION = R.string.local_service_started;
 
     protected static final Kryo mKryo = new Kryo();
     protected Blaubot mBlaubot;
@@ -55,7 +61,7 @@ public class StarService extends Service {
      * IPC.
      */
     public class LocalBinder extends Binder {
-        StarService getService() {
+        public StarService getService() {
             return StarService.this;
         }
     }
@@ -68,7 +74,7 @@ public class StarService extends Service {
         showNotification();
 
         //TODO Look into security, pairing, etc.
-        mBlaubot = BlaubotAndroidFactory.createEthernetBlaubot(SatelliteActivity.MY_UUID);
+        mBlaubot = BlaubotAndroidFactory.createEthernetBlaubot(STAR_NET_UUID);
         mBlaubot.startBlaubot();
 
         mChannel = mBlaubot.createChannel((short)1);
@@ -120,6 +126,21 @@ public class StarService extends Service {
                                             } catch (Exception e) {
                                                 Log.e(TAG, "Error in satellite callback", e);
                                             }
+                                        }
+                                    }
+                                } else if (msg instanceof StarMessageBroadcast) {
+                                    for (Consumer<Object> hub : mHubs) {
+                                        try {
+                                            hub.accept(((StarMessageBroadcast)msg).payload);
+                                        } catch (Exception e) {
+                                            Log.e(TAG, "Error in hub callback", e);
+                                        }
+                                    }
+                                    for (Consumer<Object> satellite : mSatellites) {
+                                        try {
+                                            satellite.accept(((StarMessageBroadcast)msg).payload);
+                                        } catch (Exception e) {
+                                            Log.e(TAG, "Error in satellite callback", e);
                                         }
                                     }
                                 } else {
@@ -175,7 +196,15 @@ public class StarService extends Service {
                 return iBlaubotDevice.getUniqueDeviceID();
             }
         }).collect(Collectors.<String>toList());
-    };
+    }
+
+    public List<String> getAllDevices() {
+        List<String> devs = getOtherDevices();
+        if (!devs.contains(getId())) {
+            devs.add(0, getId());
+        }
+        return devs;
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -233,22 +262,8 @@ public class StarService extends Service {
     }
 
     public void sendToHub(Object msg) {
-        //TODO Error if no channel?
-        if (mChannel != null) {
-            try {
-                StarMessageToHub sMsg = new StarMessageToHub(msg);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                Output out = new Output(baos);
-                mKryo.writeClassAndObject(out, sMsg);
-                out.flush();
-                out.flush();
-                baos.flush();
-                baos.close();
-                mChannel.publish(baos.toByteArray());
-            } catch (IOException e) {
-                Log.e(TAG, "Error sending message to hub", e);
-            }
-        }
+        StarMessageToHub sMsg = new StarMessageToHub(msg);
+        broadcast(sMsg);
     }
 
     //TODO TODO Do
@@ -266,10 +281,24 @@ public class StarService extends Service {
     }
 
     public void sendToSatellite(String satellite, Object msg) {
+        StarMessageToSatellite sMsg = new StarMessageToSatellite(satellite, msg);
+        broadcast(sMsg);
+    }
+
+    //TODO TODO Do
+    public Object sendToSatelliteAndWait(Object satellite, Object msg) {
+        return null;
+    }
+
+    public void sendToAll(Object msg) {
+        StarMessageBroadcast sMsg = new StarMessageBroadcast(msg);
+        broadcast(sMsg);
+    }
+
+    protected void broadcast(StarMessage sMsg) {
         //TODO Error if no channel?
         if (mChannel != null) {
             try {
-                StarMessageToSatellite sMsg = new StarMessageToSatellite(satellite, msg);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 Output out = new Output(baos);
                 mKryo.writeClassAndObject(out, sMsg);
@@ -282,10 +311,5 @@ public class StarService extends Service {
                 e.printStackTrace();
             }
         }
-    }
-
-    //TODO TODO Do
-    public Object sendToSatelliteAndWait(Object satellite, Object msg) {
-        return null;
     }
 }
