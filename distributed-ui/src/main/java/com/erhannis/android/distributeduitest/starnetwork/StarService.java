@@ -10,6 +10,7 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.erhannis.android.distributeduitest.FragmentManagerActivity;
 import com.erhannis.android.distributeduitest.R;
 import com.erhannis.android.distributeduitest.SatelliteActivity;
 import com.esotericsoftware.kryo.Kryo;
@@ -39,7 +40,7 @@ import java8.util.function.Function;
 import java8.util.stream.Collectors;
 import java8.util.stream.StreamSupport;
 
-public class StarService extends Service {
+public class StarService extends StackableLocalService<StarService> {
     private static final String TAG = "StarService";
 
     public static final UUID STAR_NET_UUID = UUID.fromString("e72cd6c5-2c05-42ca-8f77-91d90649c970");
@@ -55,15 +56,8 @@ public class StarService extends Service {
     protected Blaubot mBlaubot;
     protected IBlaubotChannel mChannel;
 
-    /**
-     * Class for clients to access.  Because we know this service always
-     * runs in the same process as its clients, we don't need to deal with
-     * IPC.
-     */
-    public class LocalBinder extends Binder {
-        public StarService getService() {
-            return StarService.this;
-        }
+    public StarService() {
+        super();
     }
 
     @Override
@@ -169,6 +163,10 @@ public class StarService extends Service {
     }
 
     @Override
+    protected void onAllConnected() {
+    }
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "Received start id " + startId + ": " + intent);
         return START_STICKY;
@@ -206,15 +204,6 @@ public class StarService extends Service {
         return devs;
     }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return mBinder;
-    }
-
-    // This is the object that receives interactions from clients.  See
-    // RemoteService for a more complete example.
-    private final IBinder mBinder = new LocalBinder();
-
     /**
      * Show a notification while this service is running.
      */
@@ -224,7 +213,7 @@ public class StarService extends Service {
 
         // The PendingIntent to launch our activity if the user selects this notification
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, SatelliteActivity.class), 0); //TODO set
+                new Intent(this, FragmentManagerActivity.class), 0); //TODO set
 
         // Set the info for the views that show in the notification panel.
         Notification notification = new Notification.Builder(this)

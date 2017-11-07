@@ -3,3 +3,4 @@ Deal with disconnects
 Deal with no internet
 Deal with auto(re)connection
 Manage fragment locations
+When devices connect, add them to locations and the manager ui

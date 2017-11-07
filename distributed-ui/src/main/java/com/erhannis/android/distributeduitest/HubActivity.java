@@ -61,20 +61,29 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
 
   private ServiceConnection mConnection = new ServiceConnection() {
     public void onServiceConnected(ComponentName className, IBinder service) {
-      mBoundService = ((UiMovementService.LocalBinder)service).getService();
-      toast("Connected to star network service");
+      ((UiMovementService.LocalBinder)service).addStackConnectedListener(new Consumer<UiMovementService>() {
+        @Override
+        public void accept(UiMovementService uiMovementService) {
+          mBoundService = uiMovementService;
 
-      mBoundService.registerCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
+          toast("Connected to ui movement service");
+
+          for (FragmentHandle f : getFragmentHandles()) {
+            mBoundService.registerFragment(f);
+          }
+          mBoundService.registerCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
+        }
+      });
     }
 
     public void onServiceDisconnected(ComponentName className) {
       mBoundService = null;
-      toast("Disconnected from star network service");
+      toast("Disconnected from ui movement service");
     }
   };
 
   void doBindService() {
-    boolean bound = bindService(new Intent(HubActivity.this, StarService.class), mConnection, Context.BIND_AUTO_CREATE);
+    boolean bound = bindService(new Intent(HubActivity.this, UiMovementService.class), mConnection, Context.BIND_AUTO_CREATE);
     //TODO Change out logging
     System.out.println("bound: " + bound);
     mIsBound = true;
@@ -82,6 +91,8 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
 
   void doUnbindService() {
     if (mIsBound) {
+      //TODO Hmm.  This could lead to leaks, if doUnbindService is called before the service is properly bound.
+      //TODO DelayedCallback?
       mBoundService.unregisterCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
       unbindService(mConnection);
       mIsBound = false;
@@ -170,6 +181,8 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
   public boolean implementsInterface(Class iface) {
     return iface.isAssignableFrom(this.getClass());
   }
+
+  public abstract List<FragmentHandle> getFragmentHandles();
 
   protected void toast(final String msg) {
     runOnUiThread(new Runnable() {

@@ -50,9 +50,15 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
 
   private final ServiceConnection mConnection = new ServiceConnection() {
     public void onServiceConnected(ComponentName className, IBinder service) {
-      mBoundService = ((UiMovementService.LocalBinder)service).getService();
-      mBoundService.registerCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
-      toast("Connected to ui movement service");
+      ((UiMovementService.LocalBinder)service).addStackConnectedListener(new Consumer<UiMovementService>() {
+        @Override
+        public void accept(UiMovementService uiMovementService) {
+          mBoundService = uiMovementService;
+
+          mBoundService.registerCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
+          toast("Connected to ui movement service");
+        }
+      });
     }
 
     public void onServiceDisconnected(ComponentName className) {
@@ -62,13 +68,14 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
   };
 
   void doBindService() {
-    boolean bound = bindService(new Intent(SatelliteActivity.this, StarService.class), mConnection, Context.BIND_AUTO_CREATE);
+    boolean bound = bindService(new Intent(SatelliteActivity.this, UiMovementService.class), mConnection, Context.BIND_AUTO_CREATE);
     System.out.println("bound: " + bound);
     mIsBound = true;
   }
 
   void doUnbindService() {
     if (mIsBound) {
+      //TODO Hmm.  This could lead to leaks, if doUnbindService is called before the service is properly bound.
       mBoundService.unregisterCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
       unbindService(mConnection);
       mIsBound = false;

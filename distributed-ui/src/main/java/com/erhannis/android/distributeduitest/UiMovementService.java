@@ -3,17 +3,16 @@ package com.erhannis.android.distributeduitest;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.erhannis.android.distributeduitest.starnetwork.StackableLocalService;
 import com.erhannis.android.distributeduitest.starnetwork.StarService;
 
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -30,17 +29,15 @@ import java8.util.function.Consumer;
  * Created by erhannis on 10/14/17.
  */
 
-public class UiMovementService extends Service implements DistributedUiCommunicator {
+public class UiMovementService extends StackableLocalService<UiMovementService> implements DistributedUiCommunicator {
   private static final String TAG = "UiMovementService";
 
   private NotificationManager mNM;
 
   private final ListOrderedMap<FragmentHandle, String> fragmentLocations = new ListOrderedMap<>();
 
-  public class LocalBinder extends Binder {
-    public UiMovementService getService() {
-      return UiMovementService.this;
-    }
+  public UiMovementService() {
+    super(StarService.class);
   }
 
   @Override
@@ -50,7 +47,17 @@ public class UiMovementService extends Service implements DistributedUiCommunica
     // Display a notification about us starting.  We put an icon in the status bar.
     showNotification();
 
-    doBindStarService();
+    doBindServices();
+  }
+
+  private StarService getStarService() {
+    return ((StarService)getSubServices()[0]);
+  }
+
+  @Override
+  protected void onAllConnected() {
+    // Not sure if "satellite" is accurate
+    getStarService().registerAsSatellite(mStarMessageCallback);
   }
 
   @Override
@@ -59,24 +66,26 @@ public class UiMovementService extends Service implements DistributedUiCommunica
     return START_STICKY;
   }
 
+
+  @Override
+  protected void doUnbindServices() {
+    // This should be the only place where this check is needed.
+    if (getSubServices()[0] != null) {
+      getStarService().unregisterAsSatellite(mStarMessageCallback);
+    }
+    super.doUnbindServices();
+  }
+
   @Override
   public void onDestroy() {
     // Cancel the persistent notification.
     mNM.cancel(StarService.NOTIFICATION);
-    doUnbindStarService();
+
+    doUnbindServices();
 
     // Tell the user we stopped.
     Toast.makeText(this, R.string.local_service_stopped, Toast.LENGTH_SHORT).show();
   }
-
-  @Override
-  public IBinder onBind(Intent intent) {
-    return mBinder;
-  }
-
-  // This is the object that receives interactions from clients.  See
-  // RemoteService for a more complete example.
-  private final IBinder mBinder = new LocalBinder();
 
   /**
    * Show a notification while this service is running.
@@ -102,16 +111,13 @@ public class UiMovementService extends Service implements DistributedUiCommunica
   }
 
   //<editor-fold desc="Bind StarService">
-  private boolean mIsBoundToStarService = false;
-  private StarService mBoundStarService;
-
   protected final Consumer<Object> mStarMessageCallback = new Consumer<Object>() {
     @Override
     public void accept(Object msg) {
       if (msg instanceof DistributedUIFragmentChange) {
         DistributedUIFragmentChange change = (DistributedUIFragmentChange) msg;
         if (fragmentLocations.get(change.fragment) != null && !fragmentLocations.get(change.fragment).equals(change.target)) {
-          if (fragmentLocations.get(change.fragment).equals(mBoundStarService.getId())) {
+          if (fragmentLocations.get(change.fragment).equals(getStarService().getId())) {
             // Fragment is moving away from here
             for (Consumer<FragmentHandle> c : hostFragmentCallbacks) {
               try {
@@ -120,7 +126,7 @@ public class UiMovementService extends Service implements DistributedUiCommunica
                 Log.e(TAG, "Error running callback", e);
               }
             }
-          } else if (change.target != null && change.target.equals(mBoundStarService.getId())) {
+          } else if (change.target != null && change.target.equals(getStarService().getId())) {
             // Fragment is moving here
             for (Consumer<FragmentHandle> c : dropFragmentCallbacks) {
               try {
@@ -144,36 +150,6 @@ public class UiMovementService extends Service implements DistributedUiCommunica
       }
     }
   };
-
-  private ServiceConnection mStarConnection = new ServiceConnection() {
-    public void onServiceConnected(ComponentName className, IBinder service) {
-      mBoundStarService = ((StarService.LocalBinder)service).getService();
-      toast("Connected to star network service");
-
-      // Not sure if "satellite" is accurate
-      mBoundStarService.registerAsSatellite(mStarMessageCallback);
-    }
-
-    public void onServiceDisconnected(ComponentName className) {
-      mBoundStarService = null;
-      toast("Disconnected from star network service");
-    }
-  };
-
-  private void doBindStarService() {
-    boolean bound = bindService(new Intent(UiMovementService.this, StarService.class), mStarConnection, Context.BIND_AUTO_CREATE);
-    //TODO Change out logging
-    System.out.println("bound: " + bound);
-    mIsBoundToStarService = true;
-  }
-
-  private void doUnbindStarService() {
-    if (mIsBoundToStarService) {
-      mBoundStarService.unregisterAsSatellite(mStarMessageCallback);
-      unbindService(mStarConnection);
-      mIsBoundToStarService = false;
-    }
-  }
   //</editor-fold>
 
   private ArrayList<Consumer<FragmentHandle>> hostFragmentCallbacks = new ArrayList<>();
@@ -194,9 +170,9 @@ public class UiMovementService extends Service implements DistributedUiCommunica
 
   public void registerFragment(FragmentHandle handle) {
     if (!fragmentLocations.keySet().contains(handle)) {
-      fragmentLocations.put(handle, mBoundStarService.getId());
+      fragmentLocations.put(handle, getStarService().getId());
       //TODO Is this necessary?
-      relocateFragment(handle, mBoundStarService.getId());
+      relocateFragment(handle, getStarService().getId());
     }
   }
 
@@ -207,48 +183,42 @@ public class UiMovementService extends Service implements DistributedUiCommunica
   }
 
   public void relocateFragment(FragmentHandle handle, String satellite) {
-    if (mIsBoundToStarService) {
-      mBoundStarService.sendToAll(new DistributedUIFragmentChange(satellite, handle));
-    }
+    getStarService().sendToAll(new DistributedUIFragmentChange(satellite, handle));
   }
 
   public List<String> getLocations() {
-    if (mIsBoundToStarService) {
-      return mBoundStarService.getAllDevices();
-    }
-    //TODO ?
-    return null;
+    return getStarService().getAllDevices();
   }
 
   //<editor-fold desc="Comms pass-through">
   @Override
   public void sendToHub(String method, Object... args) {
-    mBoundStarService.sendToHub(new DistributedUIMethodCall(method, args));
+    getStarService().sendToHub(new DistributedUIMethodCall(method, args));
   }
 
   @Override
   public Object sendToHubAndWait(String method, Object... args) {
-    return mBoundStarService.sendToHubAndWait(new DistributedUIMethodCall(method, args));
+    return getStarService().sendToHubAndWait(new DistributedUIMethodCall(method, args));
   }
 
   @Override
   public void sendToSatellites(String method, Object... args) {
-    mBoundStarService.sendToSatellites(new DistributedUIMethodCall(method, args));
+    getStarService().sendToSatellites(new DistributedUIMethodCall(method, args));
   }
 
   @Override
   public Map<String, Object> sendToSatellitesAndWait(String method, Object... args) {
-    return mBoundStarService.sendToSatellitesAndWait(new DistributedUIMethodCall(method, args));
+    return getStarService().sendToSatellitesAndWait(new DistributedUIMethodCall(method, args));
   }
 
   @Override
   public void sendToSatellite(String satellite, String method, Object... args) {
-    mBoundStarService.sendToSatellite(satellite, new DistributedUIMethodCall(method, args));
+    getStarService().sendToSatellite(satellite, new DistributedUIMethodCall(method, args));
   }
 
   @Override
   public Object sendToSatelliteAndWait(String satellite, String method, Object... args) {
-    return mBoundStarService.sendToSatelliteAndWait(satellite, new DistributedUIMethodCall(method, args));
+    return getStarService().sendToSatelliteAndWait(satellite, new DistributedUIMethodCall(method, args));
   }
   //</editor-fold>
 

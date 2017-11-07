@@ -42,9 +42,15 @@ public class FragmentManagerActivity extends AppCompatActivity {
 
   private final ServiceConnection mConnection = new ServiceConnection() {
     public void onServiceConnected(ComponentName className, IBinder service) {
-      mBoundService = ((UiMovementService.LocalBinder)service).getService();
-      mFragmentManagerAdapter.updateData(mBoundService.getFragmentLocations(), mBoundService.getLocations());
-      Log.d(TAG, "Connected to UiMovementService");
+      ((UiMovementService.LocalBinder)service).addStackConnectedListener(new Consumer<UiMovementService>() {
+        @Override
+        public void accept(UiMovementService uiMovementService) {
+          mBoundService = uiMovementService;
+
+          mFragmentManagerAdapter.updateData(mBoundService.getFragmentLocations(), mBoundService.getLocations());
+          Log.d(TAG, "Connected to UiMovementService");
+        }
+      });
     }
 
     public void onServiceDisconnected(ComponentName className) {
