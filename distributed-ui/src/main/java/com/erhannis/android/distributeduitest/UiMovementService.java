@@ -18,8 +18,12 @@ import com.erhannis.android.distributeduitest.starnetwork.StarService;
 import org.apache.commons.collections4.map.ListOrderedMap;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import java8.util.Objects;
 import java8.util.function.Consumer;
@@ -57,8 +61,8 @@ public class UiMovementService extends StackableLocalService<UiMovementService> 
 
   @Override
   protected void onAllConnected() {
-    // Not sure if "satellite" is accurate
-    getStarService().registerAsSatellite(mStarMessageCallback);
+    getStarService().registerAsHub(mStarMessageHubCallback);
+    getStarService().registerAsSatellite(mStarMessageSatelliteCallback);
   }
 
   @Override
@@ -72,7 +76,8 @@ public class UiMovementService extends StackableLocalService<UiMovementService> 
   protected void doUnbindServices() {
     // This should be the only place where this check is needed.
     if (getSubServices()[0] != null) {
-      getStarService().unregisterAsSatellite(mStarMessageCallback);
+      getStarService().unregisterAsHub(mStarMessageHubCallback);
+      getStarService().unregisterAsSatellite(mStarMessageSatelliteCallback);
     }
     super.doUnbindServices();
   }
@@ -112,7 +117,7 @@ public class UiMovementService extends StackableLocalService<UiMovementService> 
   }
 
   //<editor-fold desc="Bind StarService">
-  protected final Consumer<Object> mStarMessageCallback = new Consumer<Object>() {
+  protected final Consumer<Object> mStarMessageSatelliteCallback = new Consumer<Object>() {
     @Override
     public void accept(Object msg) {
       if (msg instanceof DistributedUIFragmentChange) {
@@ -142,11 +147,28 @@ public class UiMovementService extends StackableLocalService<UiMovementService> 
       } else if (msg instanceof DistributedUIMethodCall) {
         //TODO Not sure if this is finished
         DistributedUIMethodCall call = (DistributedUIMethodCall) msg;
-        for (Consumer<DistributedUIMethodCall> c : rpcCallbacks) {
+        for (Consumer<DistributedUIMethodCall> c : rpcSatelliteCallbacks) {
           try {
             c.accept(call);
           } catch (Exception e) {
-            Log.e(TAG, "Error running callback", e);
+            Log.e(TAG, "Error running satellite callback", e);
+          }
+        }
+      }
+    }
+  };
+
+  protected final Consumer<Object> mStarMessageHubCallback = new Consumer<Object>() {
+    @Override
+    public void accept(Object msg) {
+      if (msg instanceof DistributedUIMethodCall) {
+        //TODO Not sure if this is finished
+        DistributedUIMethodCall call = (DistributedUIMethodCall) msg;
+        for (Consumer<DistributedUIMethodCall> c : rpcHubCallbacks) {
+          try {
+            c.accept(call);
+          } catch (Exception e) {
+            Log.e(TAG, "Error running hub callback", e);
           }
         }
       }
@@ -154,20 +176,29 @@ public class UiMovementService extends StackableLocalService<UiMovementService> 
   };
   //</editor-fold>
 
-  private ArrayList<Consumer<FragmentHandle>> hostFragmentCallbacks = new ArrayList<>();
-  private ArrayList<Consumer<FragmentHandle>> dropFragmentCallbacks = new ArrayList<>();
-  private ArrayList<Consumer<DistributedUIMethodCall>> rpcCallbacks = new ArrayList<>();
+  private Queue<Consumer<FragmentHandle>> hostFragmentCallbacks = new ConcurrentLinkedQueue<>();
+  private Queue<Consumer<FragmentHandle>> dropFragmentCallbacks = new ConcurrentLinkedQueue<>();
+  private Queue<Consumer<DistributedUIMethodCall>> rpcSatelliteCallbacks = new ConcurrentLinkedQueue<>();
+  private Queue<Consumer<DistributedUIMethodCall>> rpcHubCallbacks = new ConcurrentLinkedQueue<>();
 
-  public void registerCallbacks(Consumer<FragmentHandle> hostFragment, Consumer<FragmentHandle> dropFragment, Consumer<DistributedUIMethodCall> rpcCallback) {
+  public void registerCallbacks(boolean isHub, Consumer<FragmentHandle> hostFragment, Consumer<FragmentHandle> dropFragment, Consumer<DistributedUIMethodCall> rpcCallback) {
     hostFragmentCallbacks.add(hostFragment);
     dropFragmentCallbacks.add(dropFragment);
-    rpcCallbacks.add(rpcCallback);
+    if (isHub) {
+      rpcHubCallbacks.add(rpcCallback);
+    } else {
+      rpcSatelliteCallbacks.add(rpcCallback);
+    }
   }
 
-  public void unregisterCallbacks(Consumer<FragmentHandle> hostFragment, Consumer<FragmentHandle> dropFragment, Consumer<DistributedUIMethodCall> rpcCallback) {
+  public void unregisterCallbacks(boolean isHub, Consumer<FragmentHandle> hostFragment, Consumer<FragmentHandle> dropFragment, Consumer<DistributedUIMethodCall> rpcCallback) {
     hostFragmentCallbacks.remove(hostFragment);
     dropFragmentCallbacks.remove(dropFragment);
-    rpcCallbacks.remove(rpcCallback);
+    if (isHub) {
+      rpcHubCallbacks.remove(rpcCallback);
+    } else {
+      rpcSatelliteCallbacks.remove(rpcCallback);
+    }
   }
 
   public void registerFragment(FragmentHandle handle) {

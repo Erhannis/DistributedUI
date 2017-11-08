@@ -55,7 +55,7 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
         public void accept(UiMovementService uiMovementService) {
           mBoundService = uiMovementService;
 
-          mBoundService.registerCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
+          mBoundService.registerCallbacks(false, mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
           toast("Connected to ui movement service");
           Log.d(TAG, "Fully connected to UiMovementService");
         }
@@ -78,7 +78,7 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
   void doUnbindService() {
     if (mIsBound) {
       //TODO Hmm.  This could lead to leaks, if doUnbindService is called before the service is properly bound.
-      mBoundService.unregisterCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
+      mBoundService.unregisterCallbacks(false, mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
       unbindService(mConnection);
       mIsBound = false;
     }

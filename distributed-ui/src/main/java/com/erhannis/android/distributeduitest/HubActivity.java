@@ -72,7 +72,7 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
           for (FragmentHandle f : getFragmentHandles()) {
             mBoundService.registerFragment(f);
           }
-          mBoundService.registerCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
+          mBoundService.registerCallbacks(true, mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
         }
       });
       Log.d(TAG, "Partially connected to UiMovementService");
@@ -95,7 +95,8 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
     if (mIsBound) {
       //TODO Hmm.  This could lead to leaks, if doUnbindService is called before the service is properly bound.
       //TODO DelayedCallback?
-      mBoundService.unregisterCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
+      //TODO Some kind of generic opposing method calls?
+      mBoundService.unregisterCallbacks(true, mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
       unbindService(mConnection);
       mIsBound = false;
     }
