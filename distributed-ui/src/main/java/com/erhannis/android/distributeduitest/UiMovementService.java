@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import java8.util.Objects;
 import java8.util.function.Consumer;
 
 /**
@@ -116,10 +117,10 @@ public class UiMovementService extends StackableLocalService<UiMovementService> 
     public void accept(Object msg) {
       if (msg instanceof DistributedUIFragmentChange) {
         DistributedUIFragmentChange change = (DistributedUIFragmentChange) msg;
-        if (fragmentLocations.get(change.fragment) != null && !fragmentLocations.get(change.fragment).equals(change.target)) {
-          if (fragmentLocations.get(change.fragment).equals(getStarService().getId())) {
+        if (!Objects.equals(fragmentLocations.get(change.fragment), change.target)) {
+          if (Objects.equals(fragmentLocations.get(change.fragment), getStarService().getId())) {
             // Fragment is moving away from here
-            for (Consumer<FragmentHandle> c : hostFragmentCallbacks) {
+            for (Consumer<FragmentHandle> c : dropFragmentCallbacks) {
               try {
                 c.accept(change.fragment);
               } catch (Exception e) {
@@ -128,7 +129,7 @@ public class UiMovementService extends StackableLocalService<UiMovementService> 
             }
           } else if (change.target != null && change.target.equals(getStarService().getId())) {
             // Fragment is moving here
-            for (Consumer<FragmentHandle> c : dropFragmentCallbacks) {
+            for (Consumer<FragmentHandle> c : hostFragmentCallbacks) {
               try {
                 c.accept(change.fragment);
               } catch (Exception e) {
@@ -136,15 +137,16 @@ public class UiMovementService extends StackableLocalService<UiMovementService> 
               }
             }
           }
-        } else if (msg instanceof DistributedUIMethodCall) {
-          //TODO Not sure if this is finished
-          DistributedUIMethodCall call = (DistributedUIMethodCall) msg;
-          for (Consumer<DistributedUIMethodCall> c : rpcCallbacks) {
-            try {
-              c.accept(call);
-            } catch (Exception e) {
-              Log.e(TAG, "Error running callback", e);
-            }
+        }
+        fragmentLocations.put(change.fragment, change.target);
+      } else if (msg instanceof DistributedUIMethodCall) {
+        //TODO Not sure if this is finished
+        DistributedUIMethodCall call = (DistributedUIMethodCall) msg;
+        for (Consumer<DistributedUIMethodCall> c : rpcCallbacks) {
+          try {
+            c.accept(call);
+          } catch (Exception e) {
+            Log.e(TAG, "Error running callback", e);
           }
         }
       }

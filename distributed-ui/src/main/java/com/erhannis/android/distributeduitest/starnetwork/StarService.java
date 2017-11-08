@@ -160,6 +160,8 @@ public class StarService extends StackableLocalService<StarService> {
                 System.out.println("bb onKingDeviceChanged: " + oldKing + " -> " + newKing);
             }
         });
+
+        doBindServices();
     }
 
     @Override
@@ -174,6 +176,8 @@ public class StarService extends StackableLocalService<StarService> {
 
     @Override
     public void onDestroy() {
+        doUnbindServices();
+
         mBlaubot.stopBlaubot();
 
         // Cancel the persistent notification.

@@ -67,6 +67,7 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
           mBoundService = uiMovementService;
 
           toast("Connected to ui movement service");
+          Log.d(TAG, "Fully connected to UiMovementService");
 
           for (FragmentHandle f : getFragmentHandles()) {
             mBoundService.registerFragment(f);
@@ -74,6 +75,7 @@ public abstract class HubActivity extends AppCompatActivity implements Distribut
           mBoundService.registerCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
         }
       });
+      Log.d(TAG, "Partially connected to UiMovementService");
     }
 
     public void onServiceDisconnected(ComponentName className) {

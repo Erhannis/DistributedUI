@@ -39,6 +39,8 @@ import static android.content.ContentValues.TAG;
  */
 
 public abstract class StackableLocalService<IMPL extends StackableLocalService> extends Service {
+  private static final String TAG = "StackableLocalService";
+
   public class LocalBinder extends Binder {
     public void addStackConnectedListener(Consumer<IMPL> callback) {
       mStackConnectedCallerback.addCallback(callback);
@@ -82,9 +84,11 @@ public abstract class StackableLocalService<IMPL extends StackableLocalService> 
               mBoundServices[fi] = service;
               mIsFullyConnectedServices[fi] = true;
               checkAllConnected();
+
+              Log.d(TAG, "Fully connected to service: " + mBindServiceClasses[fi]);
             }
           });
-          Log.d(TAG, "Connected to service: " + mBindServiceClasses[fi]);
+          Log.d(TAG, "Partally connected to service: " + mBindServiceClasses[fi]);
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -123,6 +127,7 @@ public abstract class StackableLocalService<IMPL extends StackableLocalService> 
    * Binds services.  Call in onCreate().
    */
   protected void doBindServices() {
+    checkAllConnected();
     for (int i = 0; i < mBindServiceClasses.length; i++) {
       //TODO Is this the BIND flag we want?
       boolean bound = bindService(new Intent(StackableLocalService.this, mBindServiceClasses[i]), mServiceConnections[i], Context.BIND_AUTO_CREATE);

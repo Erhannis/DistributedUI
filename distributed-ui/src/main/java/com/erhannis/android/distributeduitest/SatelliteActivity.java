@@ -57,8 +57,10 @@ public class SatelliteActivity extends AppCompatActivity implements DistributedU
 
           mBoundService.registerCallbacks(mHostFragmentCallback, mDropFragmentCallback, mRpcCallback);
           toast("Connected to ui movement service");
+          Log.d(TAG, "Fully connected to UiMovementService");
         }
       });
+      Log.d(TAG, "Partially connected to UiMovementService");
     }
 
     public void onServiceDisconnected(ComponentName className) {

@@ -5,9 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -73,13 +75,25 @@ public class FragmentManagerActivity extends AppCompatActivity {
   }
   //</editor-fold>
 
+  public static class TestFragment extends Fragment {
+
+  }
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_fragment_manager);
     rvFragments = (RecyclerView) findViewById(R.id.rvFragments);
 
-    mFragmentManagerAdapter = new FragmentManagerAdapter(new ListOrderedMap<FragmentHandle, String>(), new ArrayList<String>(), new BiConsumer<FragmentHandle, String>() {
+    //TODO FIX
+
+    ListOrderedMap<FragmentHandle, String> map = new ListOrderedMap<FragmentHandle, String>();
+    //map.put(new FragmentHandle(TestFragment.class, "TestFragment"), "1");
+    ArrayList<String> locations = new ArrayList<String>();
+//    locations.add("1");
+//    locations.add("2");
+//    locations.add("3");
+    mFragmentManagerAdapter = new FragmentManagerAdapter(map, locations, new BiConsumer<FragmentHandle, String>() {
       @Override
       public void accept(FragmentHandle fragmentHandle, String s) {
         if (mIsBound) {
@@ -88,7 +102,7 @@ public class FragmentManagerActivity extends AppCompatActivity {
       }
     });
     rvFragments.setAdapter(mFragmentManagerAdapter);
-
+    rvFragments.setLayoutManager(new LinearLayoutManager(this));
     doBindService();
   }
 
