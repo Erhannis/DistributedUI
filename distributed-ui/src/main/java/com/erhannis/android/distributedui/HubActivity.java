@@ -1,4 +1,4 @@
-package com.erhannis.android.distributeduitest;
+package com.erhannis.android.distributedui;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -10,20 +10,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Toast;
 
-import com.erhannis.android.distributeduitest.starnetwork.StarService;
-
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import eu.hgross.blaubot.core.IBlaubotDevice;
 import java8.util.function.Consumer;
-import java8.util.function.Function;
-import java8.util.stream.Collectors;
-import java8.util.stream.StreamSupport;
 
 public abstract class HubActivity extends AppCompatActivity implements DistributedUiActivity {
   private static final String TAG = "HubActivity";

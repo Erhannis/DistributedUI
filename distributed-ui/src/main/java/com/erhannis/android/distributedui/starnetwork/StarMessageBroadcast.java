@@ -1,4 +1,4 @@
-package com.erhannis.android.distributeduitest.starnetwork;
+package com.erhannis.android.distributedui.starnetwork;
 
 /**
  * Created by erhannis on 9/23/17.

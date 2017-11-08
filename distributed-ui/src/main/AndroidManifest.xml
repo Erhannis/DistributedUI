@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.erhannis.android.distributeduitest">
+          package="com.erhannis.android.distributedui">
 
     <!-- NFC -->
     <uses-permission android:name="android.permission.NFC"/>
@@ -30,7 +30,7 @@
         android:theme="@style/AppTheme">
         <service android:name=".StarService"/>
 
-        <activity android:name=".FragmentManagerActivity">
+        <activity android:name="com.erhannis.android.distributedui.FragmentManagerActivity">
         </activity>
     </application>
 

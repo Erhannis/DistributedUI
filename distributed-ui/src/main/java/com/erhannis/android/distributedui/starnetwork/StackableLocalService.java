@@ -1,4 +1,4 @@
-package com.erhannis.android.distributeduitest.starnetwork;
+package com.erhannis.android.distributedui.starnetwork;
 
 import android.app.Service;
 import android.content.ComponentName;
@@ -9,16 +9,9 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.erhannis.android.distributeduitest.UiMovementService;
-
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import java8.util.function.Consumer;
-
-import static android.content.ContentValues.TAG;
 
 /**
  * Represents a local service that depends on other local services.  When the callback passed to

@@ -1,4 +1,4 @@
-package com.erhannis.android.distributeduitest;
+package com.erhannis.android.distributedui;
 
 import android.support.v4.app.Fragment;
 import android.os.Bundle;

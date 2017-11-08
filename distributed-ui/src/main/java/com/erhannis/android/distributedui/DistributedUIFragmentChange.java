@@ -1,6 +1,4 @@
-package com.erhannis.android.distributeduitest;
-
-import android.support.v4.app.Fragment;
+package com.erhannis.android.distributedui;
 
 /**
  * Created by erhannis on 9/16/17.

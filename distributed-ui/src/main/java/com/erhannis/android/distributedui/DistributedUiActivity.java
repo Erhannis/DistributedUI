@@ -1,8 +1,4 @@
-package com.erhannis.android.distributeduitest;
-
-import com.erhannis.android.distributeduitest.starnetwork.StarService;
-
-import java.util.Map;
+package com.erhannis.android.distributedui;
 
 /**
  *

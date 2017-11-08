@@ -1,18 +1,14 @@
-package com.erhannis.android.distributeduitest.starnetwork;
+package com.erhannis.android.distributedui.starnetwork;
 
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.Intent;
-import android.os.Binder;
-import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.erhannis.android.distributeduitest.FragmentManagerActivity;
-import com.erhannis.android.distributeduitest.R;
-import com.erhannis.android.distributeduitest.SatelliteActivity;
+import com.erhannis.android.distributedui.FragmentManagerActivity;
+import com.erhannis.android.distributedui.R;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -20,13 +16,11 @@ import com.esotericsoftware.kryo.io.Output;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 import eu.hgross.blaubot.android.BlaubotAndroidFactory;
 import eu.hgross.blaubot.core.Blaubot;

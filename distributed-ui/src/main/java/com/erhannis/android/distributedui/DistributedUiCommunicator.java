@@ -1,4 +1,4 @@
-package com.erhannis.android.distributeduitest;
+package com.erhannis.android.distributedui;
 
 import java.util.Map;
 

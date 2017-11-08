@@ -1,4 +1,4 @@
-package com.erhannis.android.distributeduitest;
+package com.erhannis.android.distributedui;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -13,10 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.erhannis.android.distributeduitest.starnetwork.StarService;
-
 import java.util.Map;
-import java.util.UUID;
 
 import java8.util.function.Consumer;
 

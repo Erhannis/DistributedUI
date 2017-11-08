@@ -1,4 +1,4 @@
-package com.erhannis.android.distributeduitest;
+package com.erhannis.android.distributedui;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -21,13 +20,10 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import com.erhannis.android.distributeduitest.starnetwork.StarService;
-
 import org.apache.commons.collections4.map.ListOrderedMap;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import java8.util.function.BiConsumer;
 import java8.util.function.Consumer;

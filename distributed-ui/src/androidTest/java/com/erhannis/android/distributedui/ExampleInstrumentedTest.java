@@ -1,4 +1,4 @@
-package com.erhannis.android.distributeduitest;
+package com.erhannis.android.distributedui;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

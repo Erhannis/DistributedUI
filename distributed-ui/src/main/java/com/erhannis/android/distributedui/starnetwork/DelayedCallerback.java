@@ -1,6 +1,5 @@
-package com.erhannis.android.distributeduitest.starnetwork;
+package com.erhannis.android.distributedui.starnetwork;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 import java8.util.function.Consumer;
