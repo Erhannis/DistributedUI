@@ -15,6 +15,7 @@ import com.esotericsoftware.kryo.io.Output;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import eu.hgross.blaubot.android.BlaubotAndroidFactory;
 import eu.hgross.blaubot.core.Blaubot;
+import eu.hgross.blaubot.core.BlaubotFactory;
 import eu.hgross.blaubot.core.IBlaubotDevice;
 import eu.hgross.blaubot.core.ILifecycleListener;
 import eu.hgross.blaubot.messaging.BlaubotMessage;
@@ -61,14 +63,30 @@ public class StarService extends StackableLocalService<StarService> {
         // Display a notification about us starting.  We put an icon in the status bar.
         showNotification();
 
-        //TODO Look into security, pairing, etc.
-        mBlaubot = BlaubotAndroidFactory.createEthernetBlaubot(STAR_NET_UUID);
-        mBlaubot.startBlaubot();
+        //TODO Should I keep trying until it gets created?
+        ensureBlaubot();
 
-        mChannel = mBlaubot.createChannel((short)1);
+        doBindServices();
+    }
+
+    protected synchronized boolean ensureBlaubot() {
+        if (mBlaubot != null) {
+            return true;
+        }
+        //TODO Look into security, pairing, etc.
+        Blaubot bb;
+        try {
+            bb = BlaubotAndroidFactory.createEthernetBlaubot(STAR_NET_UUID);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create blaubot", e);
+            return false;
+        }
+        bb.startBlaubot();
+
+        mChannel = bb.createChannel((short)1);
 
         // attach life cycle listener
-        mBlaubot.addLifecycleListener(new ILifecycleListener() {
+        bb.addLifecycleListener(new ILifecycleListener() {
             @Override
             public void onDisconnected() {
                 System.out.println("bb onDisconnected");
@@ -155,7 +173,9 @@ public class StarService extends StackableLocalService<StarService> {
             }
         });
 
-        doBindServices();
+        mBlaubot = bb;
+
+        return true;
     }
 
     @Override
@@ -172,7 +192,9 @@ public class StarService extends StackableLocalService<StarService> {
     public void onDestroy() {
         doUnbindServices();
 
-        mBlaubot.stopBlaubot();
+        if (mBlaubot != null) {
+            mBlaubot.stopBlaubot();
+        }
 
         // Cancel the persistent notification.
         mNM.cancel(NOTIFICATION);
@@ -182,16 +204,24 @@ public class StarService extends StackableLocalService<StarService> {
     }
 
     public String getId() {
-        return mBlaubot.getOwnDevice().getUniqueDeviceID();
+        if (ensureBlaubot()) {
+            return mBlaubot.getOwnDevice().getUniqueDeviceID();
+        } else {
+            return null;
+        }
     }
 
     public List<String> getOtherDevices() {
-        return StreamSupport.stream(mBlaubot.getConnectionManager().getConnectedDevices()).map(new Function<IBlaubotDevice, String>() {
-            @Override
-            public String apply(IBlaubotDevice iBlaubotDevice) {
-                return iBlaubotDevice.getUniqueDeviceID();
-            }
-        }).collect(Collectors.<String>toList());
+        if (ensureBlaubot()) {
+            return StreamSupport.stream(mBlaubot.getConnectionManager().getConnectedDevices()).map(new Function<IBlaubotDevice, String>() {
+                @Override
+                public String apply(IBlaubotDevice iBlaubotDevice) {
+                    return iBlaubotDevice.getUniqueDeviceID();
+                }
+            }).collect(Collectors.<String>toList());
+        } else {
+            return new ArrayList<String>();
+        }
     }
 
     public List<String> getAllDevices() {
@@ -284,7 +314,7 @@ public class StarService extends StackableLocalService<StarService> {
 
     protected void broadcast(StarMessage sMsg) {
         //TODO Error if no channel?
-        if (mChannel != null) {
+        if (ensureBlaubot() && mChannel != null) {
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 Output out = new Output(baos);
