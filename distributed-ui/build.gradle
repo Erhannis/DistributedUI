@@ -52,13 +52,23 @@ dependencies {
     testImplementation 'junit:junit:4.12'
 }
 
-apply plugin: 'maven'
-
-group = 'com.erhannis.android'
-version = '1.0'
-
-uploadArchives {
+buildscript {
     repositories {
-        mavenLocal()
+        jcenter()
+    }
+    dependencies {
+        classpath 'digital.wup:android-maven-publish:3.6.2'
+    }
+}
+
+apply plugin: 'digital.wup.android-maven-publish'
+
+project.group 'com.erhannis.android'
+project.version '1.0-SNAPSHOT'
+publishing {
+    publications {
+        mavenAar(MavenPublication) {
+            from components.android
+        }
     }
 }
